@@ -1,0 +1,138 @@
+#last updated: Jul 5, 2019
+
+# ====== ループ変数定義 ======
+variable n loop 8  # ここでファイル数を指定（0〜4）
+variable atom_type_to_delete equal 0 #どの位置の原子を削除したか,シェルスクリプトと一致させる　←←←←←←←←←←←←←←←←←←←←
+
+label loop_start
+
+# ==== 環境変数の取得 ====
+#variable output_dir string ${output_dir}
+
+
+
+# --- 現在のステップを表示 ---
+print "========== Now running structure ${n} ==========" screen yes
+print "Processing: /4hsic_vacancy/atom_type_to_delete_0/${n}_in.sicq" screen yes
+
+clear
+
+units metal
+boundary p p p
+#atom_style atomic   #電荷なしの場合
+atom_style charge   #電荷ありの場合
+atom_modify map array
+timestep 0.001
+
+#shell cd input
+#----------config(1)----------
+#shell python3 partials_30c30si.py 10
+#-----------------------------
+#shell cd ../
+
+include ${output_dir}/include/${n}_include_n
+
+variable dx equal 3.07659964 #a1
+variable dy equal 5.32882689 #a2
+variable dz equal 2.51203309 #a3
+lattice custom 1.0 a1 ${dx} 0.0 0.0 a2 0.0 ${dy} 0.0 a3 0.0 0.0 ${dz} basis 0.0 0.0 0.0
+
+variable mylxlo equal 0
+variable mylxhi equal ${nx}
+#variable mylylo equal -10
+#variable mylyhi equal ${ny}+10
+variable mylylo equal 0
+variable mylyhi equal ${ny}
+variable mylzlo equal 0
+variable mylzhi equal 4*${nz}
+region sim_box block ${mylxlo} ${mylxhi} ${mylylo} ${mylyhi} ${mylzlo} ${mylzhi}
+create_box 2 sim_box
+
+# variable spbcdx equal ${dx}/2
+# spbc ${spbcdx} y x
+ 
+#----------config(2)----------
+read_data ${output_dir}/4hsic_vacancy/atom_type_delete_${atom_type_to_delete}/${n}_sic_vac.data add merge
+#-----------------------------
+
+mass  1 28.0855
+mass  2 12.0107
+
+#電荷なしの場合
+#pair_style vashishta
+#pair_coeff * * SiC.vashishta Si C
+
+#電荷ありの場合
+pair_style vashishta/k
+pair_coeff * * ./SiC.vashishta_k_v6 Si C
+fix f_qeq all qeq/vashishta/k 1 0.0 10.0 1.0e-6 vashishta/k
+
+thermo 10000
+thermo_style custom step temp press vol etotal ke pe
+
+variable N equal count(all)
+print "${N}" append ${output_dir}/N_atom_perfect.txt screen no
+
+# #拘束条件(面内拘束)
+# variable vfrzt equal 5.0
+# #variable frzatomy atom (y<${vfrzt})||(y>${ny}*${dy}-${vfrzt})
+# #variable frzatomz atom (z<${vfrzt})||(z>4*${nz}*${dz}-${vfrzt}-3/4*${dz})
+# variable frzatomz atom (z<${vfrzt})
+# #group gfrzatomy variable frzatomy
+# group gfrzatomz variable frzatomz
+# #fix frzy gfrzatomy setforce NULL 0.0 NULL
+# fix frzz gfrzatomz setforce NULL NULL 0.0
+# group free_atoms subtract all gfrzatomz
+
+# variable del atom z>${dz}*(4*${nz}/2+1/2+${depth})
+# group gdel variable del
+
+#variable cfgdir string cfg_d${depth}
+#shell mkdir cfg/${cfgdir} 
+#compute ene all pe/atom pair
+#dump d1 all custom 500 cfg/${cfgdir}/test.cfg mass type xs ys zs fx fy fz id type c_ene
+
+dump perfect all custom 1 ${output_dir}/dump/perfect_lattice/perfect_lattice_${atom_type_to_delete}/perfect_lattice${n}.dump id type x y z
+dump_modify perfect format line "%d %d %.15e %.15e %.15e"
+run 0
+#緩和
+min_style cg
+minimize 1.0e-16 0 200000 100000000
+run 1
+
+dump defect all custom 1 ${output_dir}/dump/defect_lattice/defect_lattice_${atom_type_to_delete}/defect_lattice${n}.dump id type x y z
+dump_modify defect format line "%d %d %.15e %.15e %.15e"
+run 0
+
+#原子削除
+#delete_atoms group gdel 
+
+#dump d2 all custom 500 cfg/${cfgdir}/w${width}_d${depth}.cfg mass type xs ys zs fx fy fz id type
+#dump_modify d2 element Si C
+
+#緩和
+#min_style cg
+#minimize 1.0e-16 0 200000 100000000
+
+#write_dump all cfg cfg/${cfgdir}/d${depth}_w${width}.cfg mass type xs ys zs fx fy fz id type c_ene modify element Si C
+#write_dump all cfg cfg/${cfgdir}/d${depth}_w${width}.cfg mass type xs ys zs fx fy fz id type q c_ene modify element Si C   #電荷出力
+
+#variable myetotal equal etotal
+#print "${myetotal}" file etotal.txt
+
+#reset_timestep 0
+
+#NVT計算
+#variable Temp equal 2000
+#velocity free_atoms create ${Temp} 1111 rot yes mom yes dist gaussian
+#fix f1 free_atoms nvt temp ${Temp} ${Temp} 0.1
+#run 50000
+#unfix f1
+
+# --- 完了メッセージ ---
+print "✅ Structure ${n} finished successfully." screen yes
+print "--------------------------------------------" screen yes
+
+# ====== 次へ ======
+next n
+jump SELF loop_start

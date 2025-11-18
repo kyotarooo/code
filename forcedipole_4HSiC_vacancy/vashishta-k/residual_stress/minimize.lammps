@@ -1,0 +1,191 @@
+#last updated: Jul 5, 2019
+
+# ====== ループ変数定義 ======
+variable n loop 8  # ここでファイル数を指定（0〜4）
+variable atom_type_to_delete equal 0 #どの位置の原子を削除したか,シェルスクリプトと一致させる　←←←←←←←←←←←←←←←←←←←←
+
+label loop_start
+
+# ==== 環境変数の取得 ====
+#variable output_dir string ${output_dir}
+
+
+
+# --- 現在のステップを表示 ---
+print "========== Now running structure ${n} ==========" screen yes
+print "Processing: /4hsic_vacancy/atom_type_to_delete_0/${n}_in.sicq" screen yes
+
+clear
+
+units metal
+boundary p p p
+#atom_style atomic   #電荷なしの場合
+atom_style charge   #電荷ありの場合
+atom_modify map array
+timestep 0.001
+
+#shell cd input
+#----------config(1)----------
+#shell python3 partials_30c30si.py 10
+#-----------------------------
+#shell cd ../
+
+include ${output_dir}/include/${n}_include_n
+
+variable dx equal 3.07659964 #a1
+variable dy equal 5.32882689 #a2
+variable dz equal 2.51203309 #a3
+lattice custom 1.0 a1 ${dx} 0.0 0.0 a2 0.0 ${dy} 0.0 a3 0.0 0.0 ${dz} basis 0.0 0.0 0.0
+
+variable mylxlo equal 0
+variable mylxhi equal ${nx}
+#variable mylylo equal -10
+#variable mylyhi equal ${ny}+10
+variable mylylo equal 0
+variable mylyhi equal ${ny}
+variable mylzlo equal 0
+variable mylzhi equal 4*${nz}
+region sim_box block ${mylxlo} ${mylxhi} ${mylylo} ${mylyhi} ${mylzlo} ${mylzhi}
+create_box 2 sim_box
+
+# variable spbcdx equal ${dx}/2
+# spbc ${spbcdx} y x
+ 
+#----------config(2)----------
+read_data ${output_dir}/4hsic_vacancy/atom_type_delete_${atom_type_to_delete}/${n}_sic_vac.data add merge
+#-----------------------------
+
+mass  1 28.0855
+mass  2 12.0107
+
+#電荷なしの場合
+#pair_style vashishta
+#pair_coeff * * SiC.vashishta Si C
+
+#電荷ありの場合
+pair_style vashishta/k
+pair_coeff * * ./SiC.vashishta_k_v6 Si C
+fix f_qeq all qeq/vashishta/k 1 0.0 10.0 1.0e-6 vashishta/k
+
+thermo 10000
+thermo_style custom step temp press vol etotal ke pe
+
+# #拘束条件(面内拘束)
+# variable vfrzt equal 5.0
+# #variable frzatomy atom (y<${vfrzt})||(y>${ny}*${dy}-${vfrzt})
+# #variable frzatomz atom (z<${vfrzt})||(z>4*${nz}*${dz}-${vfrzt}-3/4*${dz})
+# variable frzatomz atom (z<${vfrzt})
+# #group gfrzatomy variable frzatomy
+# group gfrzatomz variable frzatomz
+# #fix frzy gfrzatomy setforce NULL 0.0 NULL
+# fix frzz gfrzatomz setforce NULL NULL 0.0
+# group free_atoms subtract all gfrzatomz
+
+# variable del atom z>${dz}*(4*${nz}/2+1/2+${depth})
+# group gdel variable del
+
+#variable cfgdir string cfg_d${depth}
+#shell mkdir cfg/${cfgdir} 
+#compute ene all pe/atom pair
+#dump d1 all custom 500 cfg/${cfgdir}/test.cfg mass type xs ys zs fx fy fz id type c_ene
+
+dump perfect all custom 1 ${output_dir}/dump/perfect_lattice/perfect_lattice_${atom_type_to_delete}/perfect_lattice${n}.dump id type x y z
+dump_modify perfect format line "%d %d %.15e %.15e %.15e"
+run 0
+
+# 応力の計算
+compute pe_peratom all stress/atom NULL
+compute pe_sumstress${n} all reduce sum c_pe_peratom[1] c_pe_peratom[2] c_pe_peratom[3] c_pe_peratom[4] c_pe_peratom[5] c_pe_peratom[6]
+thermo_style custom step c_pe_sumstress${n}[1] c_pe_sumstress${n}[2] c_pe_sumstress${n}[3] c_pe_sumstress${n}[4] c_pe_sumstress${n}[5] c_pe_sumstress${n}[6]
+run 0
+
+# 応力の出力(perfect lattice (J))
+variable conv_eV_to_J equal 1.602176634E-19
+variable conv_bars_to_Pa equal 1.0E+5
+variable conv_Vang_to_Vm equal 1.0E-30
+variable conv_barVang_to_NVm equal 1.0e-25
+variable conv_J_to_eV equal 1/${conv_eV_to_J}
+variable pe_pxx_J equal c_pe_sumstress${n}[1]*${conv_barVang_to_NVm}
+variable pe_pyy_J equal c_pe_sumstress${n}[2]*${conv_barVang_to_NVm}
+variable pe_pzz_J equal c_pe_sumstress${n}[3]*${conv_barVang_to_NVm}
+variable pe_pxy_J equal c_pe_sumstress${n}[4]*${conv_barVang_to_NVm}
+variable pe_pxz_J equal c_pe_sumstress${n}[5]*${conv_barVang_to_NVm}
+variable pe_pyz_J equal c_pe_sumstress${n}[6]*${conv_barVang_to_NVm}
+print "${n} ${pe_pxx_J} ${pe_pxy_J} ${pe_pxz_J} ${pe_pxy_J} ${pe_pyy_J} ${pe_pyz_J} ${pe_pxz_J} ${pe_pyz_J} ${pe_pzz_J}" append ${output_dir}/sumstress/sumstress_${atom_type_to_delete}/perfect_J_sumstress.txt screen no
+run 0
+# 応力の出力(perfect lattice (eV))
+variable pe_pxx_eV equal c_pe_sumstress${n}[1]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable pe_pyy_eV equal c_pe_sumstress${n}[2]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable pe_pzz_eV equal c_pe_sumstress${n}[3]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable pe_pxy_eV equal c_pe_sumstress${n}[4]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable pe_pxz_eV equal c_pe_sumstress${n}[5]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable pe_pyz_eV equal c_pe_sumstress${n}[6]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+print "${n} ${pe_pxx_eV} ${pe_pxy_eV} ${pe_pxz_eV} ${pe_pxy_eV} ${pe_pyy_eV} ${pe_pyz_eV} ${pe_pxz_eV} ${pe_pyz_eV} ${pe_pzz_eV}" append ${output_dir}/sumstress/sumstress_${atom_type_to_delete}/perfect_eV_sumstress.txt screen no
+run 0
+#緩和
+min_style cg
+minimize 1.0e-16 0 200000 100000000
+run 1
+
+dump defect all custom 1 ${output_dir}/dump/defect_lattice/defect_lattice_${atom_type_to_delete}/defect_lattice${n}.dump id type x y z
+dump_modify defect format line "%d %d %.15e %.15e %.15e"
+run 0
+
+
+# 応力の計算
+compute de_peratom all stress/atom NULL
+compute de_sumstress${n} all reduce sum c_de_peratom[1] c_de_peratom[2] c_de_peratom[3] c_de_peratom[4] c_de_peratom[5] c_de_peratom[6]
+thermo_style custom step c_de_sumstress${n}[1] c_de_sumstress${n}[2] c_de_sumstress${n}[3] c_de_sumstress${n}[4] c_de_sumstress${n}[5] c_de_sumstress${n}[6]
+run 0
+
+# 応力の出力(perfect lattice (J))
+variable de_pxx_J equal c_de_sumstress${n}[1]*${conv_barVang_to_NVm}
+variable de_pyy_J equal c_de_sumstress${n}[2]*${conv_barVang_to_NVm}
+variable de_pzz_J equal c_de_sumstress${n}[3]*${conv_barVang_to_NVm}
+variable de_pxz_J equal c_de_sumstress${n}[5]*${conv_barVang_to_NVm}
+variable de_pxy_J equal c_de_sumstress${n}[4]*${conv_barVang_to_NVm}
+variable de_pyz_J equal c_de_sumstress${n}[6]*${conv_barVang_to_NVm}
+print "${n} ${de_pxx_J} ${de_pxy_J} ${de_pxz_J} ${de_pxy_J} ${de_pyy_J} ${de_pyz_J} ${de_pxz_J} ${de_pyz_J} ${de_pzz_J}" append ${output_dir}/sumstress/sumstress_${atom_type_to_delete}/defect_J_sumstress.txt screen no
+run 0
+# 応力の出力(perfect lattice (eV))
+variable de_pxx_eV equal c_de_sumstress${n}[1]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable de_pyy_eV equal c_de_sumstress${n}[2]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable de_pzz_eV equal c_de_sumstress${n}[3]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable de_pxy_eV equal c_de_sumstress${n}[4]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable de_pxz_eV equal c_de_sumstress${n}[5]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+variable de_pyz_eV equal c_de_sumstress${n}[6]*${conv_barVang_to_NVm}*${conv_J_to_eV}
+print "${n} ${de_pxx_eV} ${de_pxy_eV} ${de_pxz_eV} ${de_pxy_eV} ${de_pyy_eV} ${de_pyz_eV} ${de_pxz_eV} ${de_pyz_eV} ${de_pzz_eV}" append ${output_dir}/sumstress/sumstress_${atom_type_to_delete}/defect_eV_sumstress.txt screen no
+
+run 0
+#原子削除
+#delete_atoms group gdel 
+
+#dump d2 all custom 500 cfg/${cfgdir}/w${width}_d${depth}.cfg mass type xs ys zs fx fy fz id type
+#dump_modify d2 element Si C
+
+#緩和
+#min_style cg
+#minimize 1.0e-16 0 200000 100000000
+
+#write_dump all cfg cfg/${cfgdir}/d${depth}_w${width}.cfg mass type xs ys zs fx fy fz id type c_ene modify element Si C
+#write_dump all cfg cfg/${cfgdir}/d${depth}_w${width}.cfg mass type xs ys zs fx fy fz id type q c_ene modify element Si C   #電荷出力
+
+#variable myetotal equal etotal
+#print "${myetotal}" file etotal.txt
+
+#reset_timestep 0
+
+#NVT計算
+#variable Temp equal 2000
+#velocity free_atoms create ${Temp} 1111 rot yes mom yes dist gaussian
+#fix f1 free_atoms nvt temp ${Temp} ${Temp} 0.1
+#run 50000
+#unfix f1
+
+# --- 完了メッセージ ---
+print "✅ Structure ${n} finished successfully." screen yes
+print "--------------------------------------------" screen yes
+
+# ====== 次へ ======
+next n
+jump SELF loop_start

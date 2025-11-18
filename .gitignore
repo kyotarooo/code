@@ -1,0 +1,33 @@
+# Python venv
+venv/
+.env/
+
+# macOS
+.DS_Store
+
+# LAMMPS outputs
+*.dump
+dump.*
+*.log
+log.*
+*.data
+*.out
+*.err
+*.txt
+
+# OVITO exports
+*.png
+*.jpg
+
+# Python cache
+__pycache__/
+*.pyc
+
+# vscode settings
+.vscode/
+
+# Temporary
+tmp/
+temp/
+
+

@@ -1,0 +1,254 @@
+import numpy as np #type: ignore
+import matplotlib.pyplot as plt #type: ignore 
+import os
+
+############ Get working directory path ############
+output_dir = os.environ.get("OUTPUT_PATH")
+if output_dir is None:
+    raise ValueError("環境変数 OUTPUT_PATH error")
+
+############ Get force dipole(residual stress) directory path ############
+dipole_r_path = os.environ.get("DIPOLE_R_PATH")
+if dipole_r_path is None:
+    raise ValueError("環境変数 DIPOLE_R_PATH error")
+
+############ Define material constant ################
+lattice_const = os.environ.get("LATTICE_CONST") # ang
+lattice_const = float(lattice_const) * 1.0e-10 # m
+
+
+############# Unit conversion constants ############
+conv_eV_to_J = 1.602176634E-19
+conv_bars_to_Pa = 1.0E+5
+conv_Vang_to_Vm = 1.0E-30
+conv_barVang_to_NVm = conv_bars_to_Pa * conv_Vang_to_Vm
+conv_J_to_eV = 1/conv_eV_to_J
+conv_ang_to_m = 1.0E-10
+
+
+############ Load input file count ############
+with open(f"{output_dir}/infilename.txt", 'r') as f_num:
+    lines = f_num.readlines()
+    file_num = len(lines[0].split())
+
+############ Load Force Dipole tensor(J) ############
+with open(f"{output_dir}/force_dipole/data_p_J.inp", "r") as f_P,\
+    open(f"{output_dir}/force_dipole/mode.txt", "w") as f_mode:
+    lines = f_P.readlines()
+    cutoff_num = 4
+    P = {i: [] for i in range(cutoff_num)} 
+
+    for i in range(len(lines)):
+        values = np.array([float(v) for v in lines[i].split()])
+        mod = i % cutoff_num
+        P[mod].append(values)
+
+    ########### Create RSME mesh ########
+    sorted_mesh_rsme = {i: [] for i in range(file_num)}
+    edges_medium = {i: [] for i in range(file_num)}
+    edges = {i: [] for i in range(file_num)}
+    counts = {i: [] for i in range(file_num)}
+    for l in range(file_num):
+        max_abs_rx = 0
+        abs_mesh_rsme = []
+        mesh_rsme = []
+        with open(f"{output_dir}/dump/displacement/displacement{l}.inp", "r") as f_disp,\
+            open(f"{output_dir}/test{l}.txt", "w") as f_test:
+                lines = f_disp.readlines()
+                xc = np.array([float(lines[1].split()[i]) for i in range(3)])#xc: defect coordinate
+                ni = int(lines[2].split()[0])
+                idx = 3
+                for _ in range(ni):
+                        xi = np.array([float(lines[idx].split()[i]) for i in range(3)])
+                        idx = idx + 1
+                        rx = xi - xc
+                        mesh_rsme.append(rx)
+                        abs_mesh_rsme.append(np.linalg.norm(rx))
+                        if max_abs_rx < np.linalg.norm(rx):
+                            max_abs_rx = np.linalg.norm(rx)
+                     
+                sorted_mesh_rsme[l] = sorted(mesh_rsme, key=lambda x: np.linalg.norm(x))
+                bins = np.arange(0, max_abs_rx, 1.0e-11)
+                counts[l], edges[l] = np.histogram(abs_mesh_rsme, bins)
+                f_test.write(f"{edges}, {counts}")
+    
+    for l in range(file_num):
+        for i in range(len(edges[l])-1):
+            edges_medium[l].append((edges[l][i] + edges[l][i + 1]) / 2)
+                
+############ Load Force Dipole tensor (residual_stress) [J] ############
+with open(f"{dipole_r_path}/force_dipole/force_dipole_J.txt", "r") as f_r:
+    lines = f_r.readlines()
+    P_r = []
+    for i in range(len(lines)):
+        values = np.array([float(v) for v in lines[i].split()])
+        P_r.append(values)
+    num_P_r = (len(P_r))
+
+############ Load The number of atoms ############
+with open(f"{output_dir}/N_atom_perfect.txt", "r") as f_atoms:
+    atom = f_atoms.readlines()
+    for i in range(len(atom)):
+        atoms = [float(line.strip()) for line in atom]
+
+         
+############ Kelvin Solition ############
+def kelvin_solution(g, v, rx, green):
+    r = np.linalg.norm(rx)
+    rx_norm = rx / r  # ← コピーを作る
+    c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
+    d = np.eye(3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                green[i][j][k] = (-1) * c * (
+                    -1.0 * rx_norm[i] * d[j][k]
+                    - rx_norm[j] * d[k][i]
+                    + (3.0 - 4.0 * v) * rx_norm[k] * d[i][j]
+                    + 3.0 * rx_norm[i] * rx_norm[j] * rx_norm[k]
+                )
+    return green
+
+def main():
+
+    xc_list = []
+    for l in range(file_num):
+        # --- Initialization ---
+        a = np.zeros((9, 9))
+        b = np.zeros(9)
+        iidx = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+        jidx = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+        atom_distance_list = []
+        mesh_atom_distance_list = []
+
+        ############ Generate RSME graph ############
+        # ====== Load MD displacement data ======
+        with open(f"{output_dir}/dump/displacement/displacement{l}.inp", "r") as f_disp:
+            lines = f_disp.readlines()
+            g = float((lines[0].split())[0])
+            v = float(lines[0].split()[1])
+            xc = np.array([float(lines[1].split()[i]) for i in range(3)])#xc: defect coordinate
+            xc_list.append(xc)
+            number_atoms = int(lines[2].split()[0])
+            idx = 3
+            for _ in range(number_atoms):
+                    xi = np.array([float(lines[idx].split()[i]) for i in range(3)])
+                    ui = np.array([float(lines[idx].split()[i + 3]) for i in range(3)])
+                    idx = idx + 1
+                    rx = xi - xc
+                    atom_distance_list.append((xi,ui,rx))
+        sorted_atom_distance_list = sorted(atom_distance_list, key=lambda x: np.linalg.norm(x[2]))
+
+        # ====== Compute RMSE from Displacement ======
+        rmse_disp = {i : [] for i in range(cutoff_num)}
+        x_disp = {i : [] for i in range(cutoff_num)}
+
+        for la in range(cutoff_num):
+            for i in range(len(counts[l])):
+                sum = 0
+                n = 0
+                for xi, ui, rx in sorted_atom_distance_list:
+                    if edges[l][i] <= np.linalg.norm(rx) and edges[l][i + 1] > np.linalg.norm(rx):
+                        abs_rx = np.linalg.norm(rx)
+                        if abs_rx < 1e-15:  
+                            continue
+                        n = n + 1
+                        green = np.zeros((3, 3, 3))
+                        green = kelvin_solution(g, v, rx, green)
+                        ux=uy=uz=0.0
+                        for j in range(9):
+                            ux -= green[0][iidx[j]][jidx[j]]*P[la][1][j]
+                            uy -= green[1][iidx[j]][jidx[j]]*P[la][1][j]
+                            uz -= green[2][iidx[j]][jidx[j]]*P[la][1][j]
+                        ui_green = [ux, uy, uz]
+                        ui_sub = ui - ui_green
+                        ui_sub = np.array(ui_sub) / lattice_const
+                        sum = sum + np.dot(ui_sub, ui_sub)
+                if n != 0:
+                    rmse_disp[la].append(np.sqrt(sum / n))
+                    x_disp[la].append(edges_medium[l][i] / lattice_const)
+
+        # ====== Compute RMSE from Residual Stress ======
+        rmse_residual = {i : [] for i in range(num_P_r)}
+        x_residual = {i : [] for i in range(num_P_r)}
+
+        for la in range(num_P_r):
+            for i in range(len(counts[l])):
+                sum = 0
+                n = 0
+                for xi, ui, rx in sorted_atom_distance_list:
+                    if edges[l][i] <= np.linalg.norm(rx) and edges[l][i + 1] > np.linalg.norm(rx):
+                        abs_rx = np.linalg.norm(rx)
+                        if abs_rx < 1e-15:  
+                            continue
+                        n = n + 1
+                        green = np.zeros((3, 3, 3))
+                        green = kelvin_solution(g, v, rx, green)
+                        ux=uy=uz=0.0
+                        for j in range(9):
+                            ux -= green[0][iidx[j]][jidx[j]]*P_r[la][j]
+                            uy -= green[1][iidx[j]][jidx[j]]*P_r[la][j]
+                            uz -= green[2][iidx[j]][jidx[j]]*P_r[la][j]
+                        ui_residual = [ux, uy, uz]
+                        ui_sub = ui - ui_residual
+                        ui_sub = np.array(ui_sub) / lattice_const
+                        sum = sum + np.dot(ui_sub, ui_sub)
+                if n != 0:
+                    rmse_residual[la].append(np.sqrt(sum / n))
+                    x_residual[la].append(edges_medium[l][i] / lattice_const)
+
+        # ############# Plot RMSE comparison: MD vs Kelvin(all) vs residual ############
+        label_list = ["$r_{exel}/a=0.0$", "$r_{exel}/a=1.0$", "$r_{exel}/a=1.5$", "$r_{exel}/a=2.0$"]
+        color_list = ["#000080", "#0000ff", "#1e90ff", "#87cefa"]
+        plt.figure()
+        plt.rcParams["mathtext.fontset"] = "stix"  # STIXフォントはTimes系
+        plt.rcParams["font.family"] = "STIXGeneral"
+        colors = plt.cm.Greens(np.linspace(0.4, 4.5, len(atom)))
+        for la in range(cutoff_num):
+            plt.plot(x_disp[la], rmse_disp[la], "-", label = label_list[la], linewidth = 1.0, color = color_list[la])
+        #plt.plot(x_residual[6], rmse_residual[6], "-", label = "$\\it{Residual\\ Stress}$", linewidth = 1.0, color = "green")
+        plt.axhline(y=0.0, color='#808080', linestyle='--', linewidth=0.5)
+        plt.xlabel(r"$\it{Distance} \,/\, a \, [-]$")
+        plt.ylabel(r"$\it{RMSE} \, [-]$")
+        plt.xlim([0.0, 5.5])
+        plt.ylim(top = 0.0050)
+        plt.title(f"$\\it{{Number\\ of\\ atoms}} = {number_atoms}$")
+        plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
+        plt.legend(
+        frameon=True,
+        facecolor='white',
+        framealpha=0.9,
+        fontsize=10,
+        loc='upper right',
+        labelspacing=0.2,     # ← 行間（デフォルト: 0.5）
+        handlelength=1.5,     # ← 線の長さ（デフォルト: 2.0）
+        handletextpad=0.3,    # ← 線と文字の間隔（デフォルト: 0.8）
+        borderaxespad=0.3,    # ← 軸との余白（デフォルト: 0.5）
+        borderpad=0.3,        # ← 凡例枠内の余白（デフォルト: 0.4）
+        )
+
+            # --- make dir & save png ---
+        save_dir = f"{output_dir}/rmse_disp_cutoff_graph"
+        os.makedirs(save_dir, exist_ok=True)
+        plt.savefig(f"{save_dir}/rsme_disp{number_atoms}.png", dpi=300)
+        plt.close()
+       
+            
+
+        
+
+if __name__ == "__main__":
+     main()
+
+
+        
+             
+
+             
+
+             
+
+
+             
+
+            
