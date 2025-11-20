@@ -142,7 +142,7 @@ def main():
         sum = 0
         for xi, ui, rx in sorted_atom_distance_list:
             abs_rx = np.linalg.norm(rx)
-            if abs_rx < 5e-10:  
+            if abs_rx / lattice_const <= 1.0:  
                 continue
             green = np.zeros((3, 3, 3))
             green = kelvin_solution(g, v, rx, green)

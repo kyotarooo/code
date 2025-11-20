@@ -75,7 +75,7 @@ print(atoms)
 ############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 def kelvin_solution(g, v, rx, green):
     r = np.sqrt(np.linalg.norm(rx) ** 2 + a_core_width ** 2)
-    rx_norm = rx / r  # ← コピーを作る
+    rx_norm = rx / r  
     c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
     d = np.eye(3)
     for i in range(3):

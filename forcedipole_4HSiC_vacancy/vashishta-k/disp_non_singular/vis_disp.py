@@ -231,14 +231,17 @@ def main():
 
         # ############# Plot comparison: MD vs Kelvin(all) ############
         label_list = []
+        num_plot = 4  # プロットしたい本数
+        plot_idx = np.linspace(2, file_num - 1, num_plot, dtype=int)
+
         for i in range(file_num):
             label_list.append(f"$\\it{{{{Number\\ of\\ atoms}}}} = {atoms[i]:.0f}$")
         plt.figure()
         plt.rcParams["mathtext.fontset"] = "stix"  # STIXフォントはTimes系
         plt.rcParams["font.family"] = "STIXGeneral"
         plt.plot(abs_rx_list, ur_list, "o",mfc="#ff0000", markersize = 2.5, mec = "black", label = "$Ur$",  color="black", mew=0.5)
-        for la in range(file_num):
-            plt.plot(abs_rx_list_green[la], ur_list_green[la], "-",label = label_list[la], linewidth=1.0)
+        for la in plot_idx:
+            plt.plot(abs_rx_list_green[la][2:], ur_list_green[la][2:], "-",label = label_list[la], linewidth=1.0)
         plt.axhline(y=0.0, color='#808080', linestyle='--', linewidth=0.5)
         plt.xlabel(r"$\it{Distance} \,/\, a \, [-]$")
         plt.ylabel(r"$\it{Displacement} \,/\, a \, [-]$")
@@ -258,7 +261,7 @@ def main():
         borderpad=0.3,        # ← 凡例枠内の余白（デフォルト: 0.4）
         )
         # --- make dir & save png ---
-        save_dir = f"{output_dir}/MD_vs_green(all)_graph"
+        save_dir = f"{output_dir}/MD_disp/core_width_{a_core_width}"
         os.makedirs(save_dir, exist_ok=True)
         plt.savefig(f"{save_dir}/green_disp{atoms[l]}.png", dpi=300)
         plt.close()
@@ -279,7 +282,7 @@ def main():
         plt.xlabel(r"$\it{Distance} \,/\, a \, [-]$")
         plt.ylabel(r"$\it{Displacement} \,/\, a \, [-]$")
         plt.title(fr"$\it{{Number\ of\ atoms}} = {atoms[l]}\,\,(r_{{\mathrm{{excl}}}}\,=\,0)$")
-        plt.ylim([-0.03,0.002])
+        plt.ylim([-0.05,0.05])
         plt.xlim(left = 0.0)
         plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
         plt.legend(
@@ -297,7 +300,7 @@ def main():
         )
 
         # --- make dir & save png ---
-        save_dir = f"{output_dir}/MD_disp_residual/MD_disp_residual_{atom_type_to_delete}"
+        save_dir = f"{output_dir}/MD_disp_residual/MD_disp_residual_{atom_type_to_delete}/core_width_{a_core_width}"
         os.makedirs(save_dir, exist_ok=True)
         plt.savefig(f"{save_dir}/green_disp{atoms[l]}.png", dpi=300)
         plt.close()

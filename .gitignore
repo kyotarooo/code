@@ -1,9 +1,17 @@
 # Python venv
 venv/
 .env/
+.venv/
 
-# macOS
+# macOS system files
 .DS_Store
+*/.DS_Store
+
+# macOS Trash (ignore all files under ~/.Trash)
+.Trash/
+*/.Trash/
+**/.Trash/**
+**/.Trash/*
 
 # LAMMPS outputs
 *.dump
@@ -13,7 +21,6 @@ log.*
 *.data
 *.out
 *.err
-*.txt
 
 # OVITO exports
 *.png
@@ -23,11 +30,9 @@ log.*
 __pycache__/
 *.pyc
 
-# vscode settings
+# VSCode settings
 .vscode/
 
-# Temporary
+# Temporary folders
 tmp/
 temp/
-
-

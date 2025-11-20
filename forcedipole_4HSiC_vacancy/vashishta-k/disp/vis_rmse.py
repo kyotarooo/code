@@ -119,7 +119,7 @@ def main():
             sum = 0
             for xi, ui, rx in sorted_atom_distance_list:      
                 abs_rx = np.linalg.norm(rx)
-                if abs_rx < 1e-15:  
+                if abs_rx < 1.0e-15:  
                     continue
                 green = np.zeros((3, 3, 3))
                 green = kelvin_solution(g, v, rx, green)

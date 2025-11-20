@@ -105,24 +105,16 @@ def read_defect_data(filename):
 def read_vacancydata(filename):
     with open(filename, 'r') as f:
         lines = f.readlines()
-
-    fast_num = 0
-    for i,line in enumerate(lines):
-        if "ITEM: ATOMS" in line:
-            fast_num = i
-            break
+        items = lines[0].strip().split()
         
-    for line in lines[fast_num+1:]:
-        list = line.strip().split()
-        x,y,z = map(float, list[2:5])
-        atoms = np.array([x,y,z])
-        return atoms
+    x,y,z = map(float, items[3:6])
+    atoms = np.array([x,y,z])
+    return atoms
 
 ######## ファイル数の読み込み ########
 with open(f"{output_dir}/4hsic_q/filename.txt", 'r') as f_num:
     lines = f_num.readlines()
-    file = lines[0].split()
-    file_num = len(file)
+    file_num = len(lines)
 
 ######## supercell sizeの読み込み ########
 disp_threshold = []
@@ -144,11 +136,12 @@ coordinate_of_vacancy = []
 atom_num = []
 common_ids = []
 for i in range(file_num):
+    i += 1
     coordinate_p = read_perfect_data(f"{output_dir}/dump/perfect_lattice/perfect_lattice_{atom_type_to_delete}/perfect_lattice{i}.dump")
     coordinate_of_perfect.append(coordinate_p)
     coordinate_d = read_defect_data(f"{output_dir}/dump/defect_lattice/defect_lattice_{atom_type_to_delete}/defect_lattice{i}.dump")
     coordinate_of_defect.append(coordinate_d)
-    coordinate_v = read_vacancydata(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{i}.dump")
+    coordinate_v = read_vacancydata(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{i}")
     coordinate_of_vacancy.append(coordinate_v)
     atom_num.append(len(coordinate_d))
 
@@ -158,7 +151,7 @@ for i in range(file_num):
 ######## displacementの出力 ########
 for i in range(file_num):
     with open(f"{output_dir}/dump/displacement/displacement_{atom_type_to_delete}/displacement{i}.inp", "w") as f_disp,\
-        open(f"{output_dir}/dump/displacement_ovit/displacement_{atom_type_to_delete}/displacement_ovit{i}.xyz", "w") as f_disp_ovit:
+        open(f"{output_dir}/dump/displacement_ovit/displacement_ovit_{atom_type_to_delete}/displacement_ovit{i}.xyz", "w") as f_disp_ovit:
         
         # 拡張xyzのヘッダ行 <pecies: 元素記号, pos: 座標, disp: 変位ベクトル（これがOVITOでベクトル表示される）>
         f_disp_ovit.write(f"{atom_num[i]}\n")
