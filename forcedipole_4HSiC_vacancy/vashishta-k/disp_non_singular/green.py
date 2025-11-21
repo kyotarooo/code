@@ -60,6 +60,11 @@ def kelvin_solution(g, v, rx, green):
                 )
     return green,r
 
+
+# --- make dir & save png ---
+save_dir = f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}"
+os.makedirs(save_dir, exist_ok=True)
+
 def main():
     x_list = []
     limit_range = np.array([0, 1, 1.5, 2]) * conv_ang_to_m
@@ -119,9 +124,9 @@ def main():
                 x_list.append(x_dammy)
                 continue 
             
-    with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/data_p_J.inp", "w") as f_J,\
-         open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/data_p_eV.inp", "w") as f_eV,\
-         open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/green.txt","w") as f_g:
+    with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_J.inp", "w") as f_J,\
+         open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_eV.inp", "w") as f_eV:
+    
         for l in range(file_num*len(limit_range)):
             for i in range(9):
                 f_J.write(f"{x_list[l][i]:.12e} ")
@@ -130,13 +135,6 @@ def main():
             for i in range(9):
                 f_eV.write(f"{x_list[l][i] * conv_J_to_eV:.12e} ")
             f_eV.write("\n")
-
-           
-        for i in range(3):
-            for j in range(3):
-                for k in range(3):
-                    f_g.write(f"G[{i}][{j}][{k}] = {green[i][j][k]}")
-                    f_g.write("\n")
 
 
 if __name__ == "__main__":

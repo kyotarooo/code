@@ -50,8 +50,8 @@ with open(f"{output_dir}/4hsic_vacancy/atom_type_delete_{atom_type_to_delete}/fi
     file = lines[0].split()
     file_num = len(file)
 
-############ Load Force Dipole tensor(J) ############
-with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/data_p_J.inp", "r") as f_P,\
+############ Load Force Dipole tensor (displacement) [J] ############
+with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_J.inp", "r") as f_P,\
     open(f"{output_dir}/force_dipole/mode.txt", "w") as f_mode:
     lines = f_P.readlines()
     cutoff_num = 4
@@ -279,10 +279,10 @@ def main():
             plt.plot(abs_rx_list_green[la], ur_list_green[la], "-",label = label_list[la], linewidth=1.0, color=colors[la])
         plt.plot(abs_rx_list_residual[6], ur_list_residual[6], "-",label = "$\\it{Residual\\ Stress}$", linewidth=1.0, color = "#0000ff")
         plt.axhline(y=0.0, color='#808080', linestyle='--', linewidth=0.5)
-        plt.xlabel(r"$\it{Distance} \,/\, a \, [-]$")
-        plt.ylabel(r"$\it{Displacement} \,/\, a \, [-]$")
-        plt.title(fr"$\it{{Number\ of\ atoms}} = {atoms[l]}\,\,(r_{{\mathrm{{excl}}}}\,=\,0)$")
-        plt.ylim([-0.05,0.05])
+        plt.xlabel("Distance / a [-]")
+        plt.ylabel("Displacement / a [-]")
+        #plt.title(fr"$\it{{Number\ of\ atoms}} = {atoms[l]}\,\,(r_{{\mathrm{{excl}}}}\,=\,0)$")
+        plt.ylim([-0.03,0.02])
         plt.xlim(left = 0.0)
         plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
         plt.legend(
