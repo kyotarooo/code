@@ -1,7 +1,19 @@
 # =========================================================================================
-# グリーン関数をnon-singularに
-# r = sqrt(rx) + a 
-# ただし、a = abs(burgers vector)
+# Non-singular Green’s function (Kelvin solution) following:
+#   W. Cai et al., "A non-singular continuum theory of dislocations"
+#
+# Replace singular radius:
+#       r = |rx|
+# with non-singular form:
+#       r = sqrt(|rx|^2 + a^2)
+#
+# Then the displacement field is blended:
+#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
+#
+# where:
+#   a1 = 0.9038 * |b|
+#   a2 = 0.5451 * |b|
+#   m  = 0.6575
 # =========================================================================================
 
 import numpy as np #type: ignore
@@ -105,8 +117,8 @@ with open(f"{output_dir}/supercell.txt", "r") as f_cell:
 
 
 ############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-def kelvin_solution(g, v, rx, green):
-    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_core_width ** 2)
+def kelvin_solution(g, v, rx, green, a_cai):
+    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_cai ** 2)
     rx_norm = rx / r  # ← コピーを作る
     c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
     d = np.eye(3)
@@ -183,6 +195,8 @@ def main():
         # ====== Compute displacement from Kelvin solution ======
         abs_rx_list_green = {i: [] for i in range(file_num)}
         ur_list_green = {i: [] for i in range(file_num)}
+        a_cai = {1: 0.9038 * a_core_width, 2: 0.5451 * a_core_width}
+        m_weight = 0.6575
 
         for la in range(file_num):
             for rx in sorted_mesh_atom_distance_list:
@@ -191,14 +205,28 @@ def main():
                     continue
                 abs_rx_list_green[la].append(abs_rx)
                 nr = rx / abs_rx
-                green = np.zeros((3, 3, 3))
-                green = kelvin_solution(g, v, rx, green)
-                ux=uy=uz=0.0
+                
+                # w^~の適用   --------------------------------------
+                green_1_d = np.zeros((3, 3, 3))
+                green_1_d = kelvin_solution(g, v, rx, green_1_d, a_cai[1])
+                ux_1_d=uy_1_d=uz_1_d=0.0
                 for j in range(9):
-                    ux -= green[0][iidx[j]][jidx[j]]*P[0][la][j]
-                    uy -= green[1][iidx[j]][jidx[j]]*P[0][la][j]
-                    uz -= green[2][iidx[j]][jidx[j]]*P[0][la][j]
-                ui = [ux, uy, uz]
+                    ux_1_d -= green_1_d[0][iidx[j]][jidx[j]]*P[0][la][j]
+                    uy_1_d -= green_1_d[1][iidx[j]][jidx[j]]*P[0][la][j]
+                    uz_1_d -= green_1_d[2][iidx[j]][jidx[j]]*P[0][la][j]
+                ui_1 = np.array([ux_1_d, uy_1_d, uz_1_d])
+                
+                green_2_d = np.zeros((3, 3, 3))
+                green_2_d = kelvin_solution(g, v, rx, green_2_d, a_cai[2])
+                ux_2_d=uy_2_d=uz_2_d=0.0
+                for j in range(9):
+                    ux_2_d -= green_2_d[0][iidx[j]][jidx[j]]*P[0][la][j]
+                    uy_2_d -= green_2_d[1][iidx[j]][jidx[j]]*P[0][la][j]
+                    uz_2_d -= green_2_d[2][iidx[j]][jidx[j]]*P[0][la][j]
+                ui_2 = np.array([ux_2_d, uy_2_d, uz_2_d])
+                ui = (1-m_weight) * ui_1 + m_weight * ui_2
+                # -------------------------------------------------
+                
                 ur = (-1)*np.dot(nr, ui)
                 ur_list_green[la].append(ur)
             abs_rx_list_green[la] = np.array(abs_rx_list_green[la]) / lattice_const
@@ -215,14 +243,28 @@ def main():
                     continue
                 abs_rx_list_residual[la].append(abs_rx)
                 nr = rx / abs_rx
-                green = np.zeros((3, 3, 3))
-                green = kelvin_solution(g, v, rx, green)
-                ux=uy=uz=0.0
+                
+                # w^~の適用   --------------------------------------
+                green_1_r = np.zeros((3, 3, 3))
+                green_1_r = kelvin_solution(g, v, rx, green_1_r, a_cai[1])
+                ux_1_r=uy_1_r=uz_1_r=0.0
                 for j in range(9):
-                    ux -= green[0][iidx[j]][jidx[j]]*P_r[la][j]
-                    uy -= green[1][iidx[j]][jidx[j]]*P_r[la][j]
-                    uz -= green[2][iidx[j]][jidx[j]]*P_r[la][j]
-                ui = [ux, uy, uz]
+                    ux_1_r -= green_1_r[0][iidx[j]][jidx[j]]*P_r[la][j]
+                    uy_1_r -= green_1_r[1][iidx[j]][jidx[j]]*P_r[la][j]
+                    uz_1_r -= green_1_r[2][iidx[j]][jidx[j]]*P_r[la][j]
+                ui_1 = np.array([ux_1_r, uy_1_r, uz_1_r])
+                
+                green_2_r = np.zeros((3, 3, 3))
+                green_2_r = kelvin_solution(g, v, rx, green_2_r, a_cai[2])
+                ux_2_r=uy_2_r=uz_2_r=0.0
+                for j in range(9):
+                    ux_2_r -= green_2_r[0][iidx[j]][jidx[j]]*P_r[la][j]
+                    uy_2_r -= green_2_r[1][iidx[j]][jidx[j]]*P_r[la][j]
+                    uz_2_r -= green_2_r[2][iidx[j]][jidx[j]]*P_r[la][j]
+                ui_2 = np.array([ux_2_r, uy_2_r, uz_2_r])
+                ui = (1-m_weight) * ui_1 + m_weight * ui_2
+                # -------------------------------------------------
+                
                 ur = (-1)*np.dot(nr, ui)
                 ur_list_residual[la].append(ur)
             abs_rx_list_residual[la] = np.array(abs_rx_list_residual[la]) / lattice_const

@@ -1,7 +1,8 @@
 # =========================================================================================
 # グリーン関数をnon-singularに
 # r = sqrt(rx) + a 
-# ただし、a = abs(burgers vector)
+# a1, a2の大きさはそれぞれバーガースベクターくらいがいいかも
+# w.cai, et al., A non-singular continuum theory of dislocation
 # =========================================================================================
 
 import numpy as np # type: ignore
@@ -44,8 +45,8 @@ with open(f"{output_dir}/4hsic_q/filename.txt", 'r') as f_num:
     print(f"{file_num}")
 
 ############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-def kelvin_solution(g, v, rx, green):
-    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_core_width ** 2)
+def kelvin_solution(g, v, rx, green, a_cai):
+    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_cai ** 2)
     rx_norm = rx / r  # ← コピーを作る
     c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
     d = np.eye(3)
@@ -58,7 +59,7 @@ def kelvin_solution(g, v, rx, green):
                     + (3.0 - 4.0 * v) * rx_norm[k] * d[i][j]
                     + 3.0 * rx_norm[i] * rx_norm[j] * rx_norm[k]
                 )
-    return green,r
+    return green
 
 
 # --- make dir & save png ---
@@ -98,7 +99,7 @@ def main():
                 if np.linalg.norm(rx)>r_range_limit:
                     green = np.zeros((3, 3, 3))
                     counter += 1
-                    green,r = kelvin_solution(g, v, rx, green)
+                    green = kelvin_solution(g, v, rx, green)
 
                     for i in range(9):
                         for j in range(9):
