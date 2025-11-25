@@ -2,6 +2,7 @@
 venv/
 .env/
 .venv/
+tk-venv/
 
 # macOS system files
 .DS_Store

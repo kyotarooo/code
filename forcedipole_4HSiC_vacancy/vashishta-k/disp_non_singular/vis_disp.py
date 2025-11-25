@@ -324,7 +324,7 @@ def main():
         plt.xlabel("Distance / a [-]")
         plt.ylabel("Displacement / a [-]")
         #plt.title(fr"$\it{{Number\ of\ atoms}} = {atoms[l]}\,\,(r_{{\mathrm{{excl}}}}\,=\,0)$")
-        plt.ylim([-0.03,0.02])
+        plt.ylim([-1.5, 0.02])
         plt.xlim(left = 0.0)
         plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
         plt.legend(

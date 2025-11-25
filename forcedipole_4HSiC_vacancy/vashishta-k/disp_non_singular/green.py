@@ -1,8 +1,19 @@
 # =========================================================================================
-# グリーン関数をnon-singularに
-# r = sqrt(rx) + a 
-# a1, a2の大きさはそれぞれバーガースベクターくらいがいいかも
-# w.cai, et al., A non-singular continuum theory of dislocation
+# Non-singular Green’s function (Kelvin solution) following:
+#   W. Cai et al., "A non-singular continuum theory of dislocations"
+#
+# Replace singular radius:
+#       r = |rx|
+# with non-singular form:
+#       r = sqrt(|rx|^2 + a^2)
+#
+# Then the displacement field is blended:
+#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
+#
+# where:
+#   a1 = 0.9038 * |b|
+#   a2 = 0.5451 * |b|
+#   m  = 0.6575
 # =========================================================================================
 
 import numpy as np # type: ignore
@@ -77,6 +88,8 @@ def main():
             iidx = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
             jidx = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
             atom_distance_list = []
+            a_cai = {1: 0.9038 * a_core_width, 2: 0.5451 * a_core_width}
+            m_weight = 0.6575
 
             with open(f"{output_dir}/dump/displacement/displacement_{atom_type_to_delete}/displacement{l}.inp", "r") as f_disp: 
                 lines = f_disp.readlines()
@@ -97,20 +110,22 @@ def main():
             sorted_atom_distance_list = sorted(atom_distance_list, key=lambda x: np.linalg.norm(x[2]))
             for xi,ui,rx in tqdm(sorted_atom_distance_list):
                 if np.linalg.norm(rx)>r_range_limit:
-                    green = np.zeros((3, 3, 3))
                     counter += 1
-                    green = kelvin_solution(g, v, rx, green)
+                    green1 = np.zeros((3, 3, 3))
+                    green1 = kelvin_solution(g, v, rx, green1, a_cai[1])
+                    green2 = np.zeros((3, 3, 3))
+                    green2 = kelvin_solution(g, v, rx, green2, a_cai[2])
 
                     for i in range(9):
                         for j in range(9):
                             for k in range(3):
                                 a[i][j] += (
-                                    green[k][iidx[i]][jidx[i]] * green[k][iidx[j]][jidx[j]]
+                                    ((1-m_weight) * green1[k][iidx[i]][jidx[i]] + m_weight * green2[k][iidx[i]][jidx[i]]) * ((1-m_weight) * green1[k][iidx[j]][jidx[j]] + m_weight * green2[k][iidx[j]][jidx[j]] )
                                 )
 
                     for i in range(9):
                         for j in range(3):
-                            b[i] -= ui[j] * green[j][iidx[i]][jidx[i]]
+                            b[i] -= (1-m_weight) * ui[j] * green1[j][iidx[i]][jidx[i]] + m_weight * ui[j] * green2[j][iidx[i]][jidx[i]]
 
                 else:
                     continue
