@@ -97,6 +97,7 @@ static void MakeSubgrids(int depth, double *x0, GRID_CELL_t *grid_cell,
     }
   }
 
+// 点欠陥がどのグリッドにあるか判定　→ そこのグリッドのサブグリッドを作成
   for (int i = 0; i < inclusion->n; i++) {
     int shape = inclusion->shape[i];
 
