@@ -325,7 +325,15 @@ def main():
         os.makedirs(save_dir, exist_ok=True)
         plt.savefig(f"{save_dir}/green_disp{atoms[l]}.png", dpi=300)
         plt.close()
+        
+    for cutoff in range(cutoff_num):
+        print (f"{cutoff}: \n")
+        for i in range(9):
+            print(f"{P[cutoff][5][i] }")
+        print("\n")
 
+    for i in range(9):
+        print(f"{P_r[5][i]}")
     
         
 
