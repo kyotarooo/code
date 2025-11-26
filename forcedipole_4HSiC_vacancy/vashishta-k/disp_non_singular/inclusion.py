@@ -125,7 +125,7 @@ def main():
         f_re.write(f"{a_core_width:e}\n")
         f_re.write(f"{xc1 * conv_ang_to_m} {xc2 * conv_ang_to_m} {xc3 * conv_ang_to_m}\n")
         for i in range(9):
-            f_re.write(f"{P_r[5][i]}")
+            f_re.write(f"{P_r[5][i]} ")
             if i == 2 or i == 5:
                     f_re.write("\n")
 
