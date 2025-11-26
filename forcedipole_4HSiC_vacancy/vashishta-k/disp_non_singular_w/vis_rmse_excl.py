@@ -1,21 +1,3 @@
-# =========================================================================================
-# Non-singular Green’s function (Kelvin solution) following:
-#   W. Cai et al., "A non-singular continuum theory of dislocations"
-#
-# Replace singular radius:
-#       r = |rx|
-# with non-singular form:
-#       r = sqrt(|rx|^2 + a^2)
-#
-# Then the displacement field is blended:
-#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
-#
-# where:
-#   a1 = 0.9038 * |b|
-#   a2 = 0.5451 * |b|
-#   m  = 0.6575
-# =========================================================================================
-
 import numpy as np #type: ignore
 import matplotlib.pyplot as plt #type: ignore 
 import os
@@ -30,15 +12,10 @@ dipole_r_path = os.environ.get("DIPOLE_R_PATH")
 if dipole_r_path is None:
     raise ValueError("環境変数 DIPOLE_R_PATH error")
 
-######## 削除する原子の指定 ######## 
+######## 削除する原子の指定 ########  どの位置の原子を削除するか ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 atom_type_to_delete = int(os.environ.get("ATOM"))
 if atom_type_to_delete is None:
     raise ValueError("環境変数 ATOM error")
-
-######## コア幅 ########  ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-a_core_width = float(os.environ.get("Burgers"))
-if a_core_width is None:
-    raise ValueError("環境変数 core error")
 
 ############ Define material constant ################
 lattice_const = os.environ.get("LATTICE_CONST") # ang
@@ -58,7 +35,7 @@ with open(f"{output_dir}/4hsic_q/filename.txt", 'r') as f_num:
     file_num = len(lines)
 
 ############ Load Force Dipole tensor (Displacement)(J) ############
-with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_J.inp", "r") as f_P:
+with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/data_p_J.inp", "r") as f_P:
     lines = f_P.readlines()
     cutoff_num = 4
     P = {i: [] for i in range(cutoff_num)} 
@@ -87,13 +64,11 @@ with open(f"{output_dir}/N_atom_perfect.txt", "r") as f_atoms:
     for i in range(len(atom)):
         atoms = [float(line.strip()) for line in atom]
 
-
-
-
-############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
-def kelvin_solution(g, v, rx, green, a_cai):
-    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_cai ** 2)
-    rx_norm = rx / r  
+print(atoms)
+############ Kelvin Solition ############
+def kelvin_solution(g, v, rx, green):
+    r = np.linalg.norm(rx)
+    rx_norm = rx / r  # ← コピーを作る
     c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
     d = np.eye(3)
     for i in range(3):
@@ -138,40 +113,22 @@ def main():
 
     # ====== Compute RMSE from Displacement ======
     rmse_disp = {i: [] for i in range(cutoff_num)}
-    a_cai = {1: 0.9038 * a_core_width, 2: 0.5451 * a_core_width}
-    m_weight = 0.6575
-
 
     for cutoff in range(cutoff_num):
         for la in range(file_num):
             sum = 0
             for xi, ui, rx in sorted_atom_distance_list:      
                 abs_rx = np.linalg.norm(rx)
-                if abs_rx < 1e-15:  
+                if abs_rx / lattice_const <= 1.0:  
                     continue
-                
-                 # w^~の適用   --------------------------------------
-                green_1_d = np.zeros((3, 3, 3))
-                green_1_d = kelvin_solution(g, v, rx, green_1_d, a_cai[1])
-                ux_1_d=uy_1_d=uz_1_d=0.0
+                green = np.zeros((3, 3, 3))
+                green = kelvin_solution(g, v, rx, green)
+                ux=uy=uz=0.0
                 for j in range(9):
-                    ux_1_d -= green_1_d[0][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                    uy_1_d -= green_1_d[1][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                    uz_1_d -= green_1_d[2][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                ui_1 = np.array([ux_1_d, uy_1_d, uz_1_d])
-                
-                green_2_d = np.zeros((3, 3, 3))
-                green_2_d = kelvin_solution(g, v, rx, green_2_d, a_cai[2])
-                ux_2_d=uy_2_d=uz_2_d=0.0
-                for j in range(9):
-                    ux_2_d -= green_2_d[0][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                    uy_2_d -= green_2_d[1][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                    uz_2_d -= green_2_d[2][iidx[j]][jidx[j]]*P[cutoff][la][j]
-                ui_2 = np.array([ux_2_d, uy_2_d, uz_2_d])
-                ui_green = (1-m_weight) * ui_1 + m_weight * ui_2
-                
-                # -------------------------------------------------
-                
+                    ux -= green[0][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uy -= green[1][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uz -= green[2][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                ui_green = [ux, uy, uz]
                 ui_sub = ui - ui_green
                 ui_sub = np.array(ui_sub) / lattice_const
                 sum = sum + np.dot(ui_sub, ui_sub)
@@ -185,36 +142,22 @@ def main():
         sum = 0
         for xi, ui, rx in sorted_atom_distance_list:
             abs_rx = np.linalg.norm(rx)
-            if abs_rx < 1e-15:  
+            if abs_rx < 5e-10:  
                 continue
-            
-            # w^~の適用   --------------------------------------
-            green_1_r = np.zeros((3, 3, 3))
-            green_1_r = kelvin_solution(g, v, rx, green_1_r, a_cai[1])
-            ux_1_r=uy_1_r=uz_1_r=0.0
+            green = np.zeros((3, 3, 3))
+            green = kelvin_solution(g, v, rx, green)
+            ux=uy=uz=0.0
             for j in range(9):
-                ux_1_r -= green_1_r[0][iidx[j]][jidx[j]]*P_r[la][j]
-                uy_1_r -= green_1_r[1][iidx[j]][jidx[j]]*P_r[la][j]
-                uz_1_r -= green_1_r[2][iidx[j]][jidx[j]]*P_r[la][j]
-            ui_1 = np.array([ux_1_r, uy_1_r, uz_1_r])
-            
-            green_2_r = np.zeros((3, 3, 3))
-            green_2_r = kelvin_solution(g, v, rx, green_2_r, a_cai[2])
-            ux_2_r=uy_2_r=uz_2_r=0.0
-            for j in range(9):
-                ux_2_r -= green_2_r[0][iidx[j]][jidx[j]]*P_r[la][j]
-                uy_2_r -= green_2_r[1][iidx[j]][jidx[j]]*P_r[la][j]
-                uz_2_r -= green_2_r[2][iidx[j]][jidx[j]]*P_r[la][j]
-            ui_2 = np.array([ux_2_r, uy_2_r, uz_2_r])
-            ui_residual = (1-m_weight) * ui_1 + m_weight * ui_2
-            # -------------------------------------------------
-            
+                ux -= green[0][iidx[j]][jidx[j]]*P_r[la][j]
+                uy -= green[1][iidx[j]][jidx[j]]*P_r[la][j]
+                uz -= green[2][iidx[j]][jidx[j]]*P_r[la][j]
+            ui_residual = [ux, uy, uz]
             ui_sub = ui - ui_residual
             ui_sub = np.array(ui_sub) / lattice_const
             sum = sum + np.dot(ui_sub, ui_sub)
         rmse_residual.append(np.sqrt(sum / atom_number))
     
-
+    print(rmse_residual)
 
 
     # ############# Plot RMSE residual ############
@@ -243,7 +186,7 @@ def main():
     )
 
         # --- make dir & save png ---
-    save_dir = f"{output_dir}/rmse_residual_graph/rmse_residual_graph_{atom_type_to_delete}/core_width_{a_core_width}"
+    save_dir = f"{output_dir}/rmse_residual_graph/rmse_residual_cutoff_{atom_type_to_delete}"
     os.makedirs(save_dir, exist_ok=True)
     plt.savefig(f"{save_dir}/rsme_residual_disp.png", dpi=300)
     plt.close()
@@ -256,7 +199,10 @@ def main():
     plt.rcParams["mathtext.fontset"] = "stix"  # STIXフォントはTimes系
     plt.rcParams["font.family"] = "STIXGeneral"
     for la in range(cutoff_num):
-        plt.plot(atoms[2:], rmse_disp[la][2:], marker_list[la], label = label_list[la], linewidth = 1.0, color = "black",  markersize = 7,  mfc=color_list[la], ls = "-")
+        if la != 3:
+            plt.plot(atoms[2:], rmse_disp[la][2:], marker_list[la], label = label_list[la], linewidth = 1.0, color = "black",  markersize = 7,  mfc=color_list[la], ls = "-")
+        else:
+            plt.plot(atoms[3:], rmse_disp[la][3:], marker_list[la], label = label_list[la], linewidth = 1.0, color = "black",  markersize = 7,  mfc=color_list[la], ls = "-")
     plt.plot(atoms, rmse_residual, marker = "h", label=r"$\it{Residual\ Stress\ }$", linewidth = 1.0, mfc = "#ff0000", color = "black", ls = "-", markersize = 7)
     plt.xlabel("Number of atoms in the supercell [-]")
     plt.ylabel("Root mean square error (RMSE) [-]")
@@ -281,7 +227,7 @@ def main():
     )
 
         # --- make dir & save png ---
-    save_dir = f"{output_dir}/rmse_graph/rmse_graph_{atom_type_to_delete}/core_with_{a_core_width}"
+    save_dir = f"{output_dir}/rmse_graph/rmse_cutoff_{atom_type_to_delete}"
     os.makedirs(save_dir, exist_ok=True)
     plt.savefig(f"{save_dir}/rsme_disp.png", dpi=300)
     plt.close()

@@ -9,6 +9,7 @@ import TkEasyGUI as eg
 def write_grid(values, selected_folder):
     with open(f"{selected_folder}/grid.inp", "w") as f:
         n = [int(values["-NX-"]), int(values["-NY-"]), int(values["-NZ-"])]
+        f.write("3\n")
         f.write(" ".join(map(str, n)) + "\n")
         n = [int(values["-SUBNX-"]), int(values["-SUBNY-"]), int(values["-SUBNZ-"])]
         f.write(" ".join(map(str, n)) + "\n")
