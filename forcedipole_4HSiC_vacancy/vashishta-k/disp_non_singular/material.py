@@ -1,19 +1,5 @@
 # =========================================================================================
-# Non-singular Green’s function (Kelvin solution) following:
-#   W. Cai et al., "A non-singular continuum theory of dislocations"
-#
-# Replace singular radius:
-#       r = |rx|
-# with non-singular form:
-#       r = sqrt(|rx|^2 + a^2)
-#
-# Then the displacement field is blended:
-#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
-#
-# where:
-#   a1 = 0.9038 * |b|
-#   a2 = 0.5451 * |b|
-#   m  = 0.6575
+# material.inp作成
 # =========================================================================================
 
 import numpy as np #type: ignore
@@ -105,7 +91,9 @@ with open(f"{output_dir}/supercell.txt", "r") as f_cell:
 
 def main():
     for cutoff in range(cutoff_num):
-        with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/material_{cutoff}.inp', "w") as f_incl:
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/disp_{cutoff}_{a_core_width}"
+        os.makedirs(mk_dir, exist_ok=True)
+        with open(f'{mk_dir}/material.inp', "w") as f_incl:
             f_incl.write("1.0 0.0 0.0\n")
             f_incl.write("0.0 1.0 0.0\n")
             f_incl.write("0.0 0.0 1.0\n")
@@ -113,7 +101,9 @@ def main():
             f_incl.write(f"{cell[0] * conv_ang_to_m} {cell[1] * conv_ang_to_m} {cell[2] * conv_ang_to_m}\n")
             f_incl.write("1.92965e+11 2.01281e-01")
             
-    with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/grid_r.inp', "w") as f_re:
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/residual_{a_core_width}"
+    os.makedirs(mk_dir, exist_ok=True)
+    with open(f'{mk_dir}/material.inp', "w") as f_re:
         f_re.write("1.0 0.0 0.0\n")
         f_re.write("0.0 1.0 0.0\n")
         f_re.write("0.0 0.0 1.0\n")
@@ -121,14 +111,18 @@ def main():
         f_re.write(f"{cell[0] * conv_ang_to_m} {cell[1] * conv_ang_to_m} {cell[2] * conv_ang_to_m}\n")
         f_re.write("1.92965e+11 2.01281e-01")
             
-    for cutoff in range(cutoff_num):        
-        with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/grid_{cutoff}.inp', "w") as f_incl:
-            f_incl.write("2\n")
+    for cutoff in range(cutoff_num):
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/disp_{cutoff}_{a_core_width}"
+        os.makedirs(mk_dir, exist_ok=True)        
+        with open(f'{mk_dir}/grid.inp', "w") as f_incl:
+            f_incl.write("3\n")
             f_incl.write("10 10 10\n")
             f_incl.write("5 5 5\n")
             
-    with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/grid_r.inp', "w") as f_re:
-        f_re.write("2\n")
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/residual_{a_core_width}"
+    os.makedirs(mk_dir, exist_ok=True)           
+    with open(f'{mk_dir}/grid.inp', "w") as f_re:
+        f_re.write("3\n")
         f_re.write("10 10 10\n")
         f_re.write("5 5 5\n")
 

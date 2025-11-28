@@ -1,19 +1,5 @@
 # =========================================================================================
-# Non-singular Green’s function (Kelvin solution) following:
-#   W. Cai et al., "A non-singular continuum theory of dislocations"
-#
-# Replace singular radius:
-#       r = |rx|
-# with non-singular form:
-#       r = sqrt(|rx|^2 + a^2)
-#
-# Then the displacement field is blended:
-#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
-#
-# where:
-#   a1 = 0.9038 * |b|
-#   a2 = 0.5451 * |b|
-#   m  = 0.6575
+# inclusion.inp作成
 # =========================================================================================
 
 import numpy as np #type: ignore
@@ -102,10 +88,11 @@ def main():
 
     coordinate_v = read_vacancydata(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{6}")  # ←←←←←←←←←←←←←←←←←←N = 959 deleted_atomは1~8
     xc1, xc2, xc3 = coordinate_v
-
     
     for cutoff in range(cutoff_num):
-        with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/inclusion_{cutoff}.inp', "w") as f_incl:
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/disp_{cutoff}_{a_core_width}"
+        os.makedirs(mk_dir, exist_ok=True)
+        with open(f'{mk_dir}/inclusion.inp', "w") as f_incl:
             f_incl.write("1\n")
             f_incl.write("elastic_dipole\n")
             f_incl.write("0.0 ")
@@ -118,7 +105,9 @@ def main():
                     f_incl.write("\n")
             f_incl.write("\n")
             
-    with open(f'/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/Tools/PreProcessors/inclusion_r.inp', "w") as f_re:
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/residual_{a_core_width}"
+    os.makedirs(mk_dir, exist_ok=True) 
+    with open(f'{mk_dir}/inclusion.inp', "w") as f_re:
         f_re.write("1\n")
         f_re.write("elastic_dipole\n")
         f_re.write("0.0 ")

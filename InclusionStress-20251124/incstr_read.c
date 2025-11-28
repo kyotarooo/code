@@ -32,7 +32,7 @@ static void TinyNoise(double r, double* x) {
 void INCSTR_ReadInclusions(INCLUSION_t* inclusion, char* directory) {
   FILE* fp;
 
-  fp = OpenFile("inclusion_r.inp", directory);
+  fp = OpenFile("inclusion.inp", directory);
 
   fscanf(fp, "%d", &inclusion->n);
 
@@ -142,7 +142,7 @@ void INCSTR_ReadInclusions(INCLUSION_t* inclusion, char* directory) {
 
 void INCSTR_ReadGrids(GRID_CELL_t* grid_cell, MATERIAL_t* material,
                       char* directory) {
-  FILE* fp = OpenFile("grid_r.inp", directory);
+  FILE* fp = OpenFile("grid.inp", directory);
   double* size;
 
   fscanf(fp, "%d", &grid_cell->max_depth);
@@ -166,7 +166,7 @@ void INCSTR_ReadGrids(GRID_CELL_t* grid_cell, MATERIAL_t* material,
 }
 
 void INCSTR_ReadMaterial(MATERIAL_t* material, char* directory) {
-  FILE* fp = OpenFile("material_r.inp", directory);
+  FILE* fp = OpenFile("material.inp", directory);
 
   material->orientation = (double**)malloc(3 * sizeof(double*));
   for (int iDim = 0; iDim < 3; iDim++) {
