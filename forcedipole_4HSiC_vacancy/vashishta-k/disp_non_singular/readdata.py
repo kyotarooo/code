@@ -71,16 +71,18 @@ def read_perfect_data(filename):
             fast_num = i
             break
 
-    atoms = {} 
+    atoms = {}
+    atom_type = {}
     for line in lines[fast_num+1:]:
         if "ITEM" in line:
             break
         tokens = line.strip().split()
         atom_id = int(tokens[0])
+        atom_type[atom_id] = int(tokens[1])
         x,y,z = map(float, tokens[2:5])
         atoms[atom_id] = np.array([x,y,z])
     
-    return atoms
+    return atoms, atom_type
 
 ######## dump(defect)ファイルの読み込み関数 ########
 def read_defect_data(filename):
@@ -133,12 +135,14 @@ with open(f"{output_dir}/supercell.txt", 'r') as f_size:
 coordinate_of_defect = []
 coordinate_of_perfect = []
 coordinate_of_vacancy = []
+atom_type = []
 atom_num = []
 common_ids = []
 for i in range(file_num):
     i += 1
-    coordinate_p = read_perfect_data(f"{output_dir}/dump/perfect_lattice/perfect_lattice_{atom_type_to_delete}/perfect_lattice{i}.dump")
+    coordinate_p, type = read_perfect_data(f"{output_dir}/dump/perfect_lattice/perfect_lattice_{atom_type_to_delete}/perfect_lattice{i}.dump")
     coordinate_of_perfect.append(coordinate_p)
+    atom_type.append(type)
     coordinate_d = read_defect_data(f"{output_dir}/dump/defect_lattice/defect_lattice_{atom_type_to_delete}/defect_lattice{i}.dump")
     coordinate_of_defect.append(coordinate_d)
     coordinate_v = read_vacancydata(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{i}")
@@ -155,7 +159,7 @@ for i in range(file_num):
         
         # 拡張xyzのヘッダ行 <pecies: 元素記号, pos: 座標, disp: 変位ベクトル（これがOVITOでベクトル表示される）>
         f_disp_ovit.write(f"{atom_num[i]}\n")
-        f_disp_ovit.write("Properties=species:S:1:pos:R:3:disp:R:3\n")
+        f_disp_ovit.write(f"Properties=species:S:1:charge:R:1:mass:R:1:pos:R:3:disp:R:3 Lattice='{supercell_size[i][0]} 0 0 0 {supercell_size[i][1]} 0 0 0 {supercell_size[i][2]}' Origin='0 0 0'\n")
 
         f_disp.write(f"{g} {nu}\n")
         xc1,xc2,xc3 = coordinate_of_vacancy[i]
@@ -171,8 +175,13 @@ for i in range(file_num):
                         u[k] -= supercell_size[i][k]
                     elif u[k] < 0:
                          u[k] += supercell_size[i][k]
+            
+            if atom_type[i][atom_id] == 1:
+                mass = 28.0855
+            else:
+                mass = 12.0107
 
-            f_disp_ovit.write(f"Al {x[0]:.5f} {x[1]:.5f} {x[2]:.5f} {u[0]:.5f} {u[1]:.5f} {u[2]:.5f}\n")
+            f_disp_ovit.write(f"{atom_type[i][atom_id]} 0.000000 {mass} {x[0]:.5f} {x[1]:.5f} {x[2]:.5f} {u[0]:.5f} {u[1]:.5f} {u[2]:.5f}\n")
             f_disp.write(f"{x[0]*conv_ang_to_m:.15e} {x[1]*conv_ang_to_m:.15e} {x[2]*conv_ang_to_m:.15e} {u[0]*conv_ang_to_m:.15e} {u[1]*conv_ang_to_m:.15e} {u[2]*conv_ang_to_m:.15e}\n")
 
             
