@@ -115,14 +115,14 @@ def main():
         mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/disp_{cutoff}_{a_core_width}"
         os.makedirs(mk_dir, exist_ok=True)        
         with open(f'{mk_dir}/grid.inp', "w") as f_incl:
-            f_incl.write("3\n")
+            f_incl.write("2\n")
             f_incl.write("50 50 50\n")
             f_incl.write("10 10 10\n")
             
     mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/residual_{a_core_width}"
     os.makedirs(mk_dir, exist_ok=True)           
     with open(f'{mk_dir}/grid.inp', "w") as f_re:
-        f_re.write("3\n")
+        f_re.write("2\n")
         f_re.write("50 50 50\n")
         f_re.write("10 10 10\n")
 
