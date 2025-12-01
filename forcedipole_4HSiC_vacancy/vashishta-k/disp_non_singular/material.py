@@ -91,7 +91,7 @@ with open(f"{output_dir}/supercell.txt", "r") as f_cell:
 
 def main():
     for cutoff in range(cutoff_num):
-        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/disp_{cutoff}_{a_core_width}"
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/disp_{cutoff}_{a_core_width}"
         os.makedirs(mk_dir, exist_ok=True)
         with open(f'{mk_dir}/material.inp', "w") as f_incl:
             f_incl.write("1.0 0.0 0.0\n")
@@ -101,7 +101,7 @@ def main():
             f_incl.write(f"{cell[0] * conv_ang_to_m} {cell[1] * conv_ang_to_m} {cell[2] * conv_ang_to_m}\n")
             f_incl.write("1.92965e+11 2.01281e-01")
             
-    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/residual_{a_core_width}"
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/residual_{a_core_width}"
     os.makedirs(mk_dir, exist_ok=True)
     with open(f'{mk_dir}/material.inp', "w") as f_re:
         f_re.write("1.0 0.0 0.0\n")
@@ -112,19 +112,19 @@ def main():
         f_re.write("1.92965e+11 2.01281e-01")
             
     for cutoff in range(cutoff_num):
-        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/disp_{cutoff}_{a_core_width}"
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/disp_{cutoff}_{a_core_width}"
         os.makedirs(mk_dir, exist_ok=True)        
         with open(f'{mk_dir}/grid.inp', "w") as f_incl:
             f_incl.write("3\n")
+            f_incl.write("50 50 50\n")
             f_incl.write("10 10 10\n")
-            f_incl.write("5 5 5\n")
             
-    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251124/input/residual_{a_core_width}"
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/residual_{a_core_width}"
     os.makedirs(mk_dir, exist_ok=True)           
     with open(f'{mk_dir}/grid.inp', "w") as f_re:
         f_re.write("3\n")
+        f_re.write("50 50 50\n")
         f_re.write("10 10 10\n")
-        f_re.write("5 5 5\n")
 
 if __name__ == "__main__":
      main()
