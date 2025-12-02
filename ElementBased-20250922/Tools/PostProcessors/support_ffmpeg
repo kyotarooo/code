@@ -1,0 +1,3 @@
+#! /bin/csh
+
+ffmpeg -i "./image_%04d.jpeg" -vf format=yuv420p $1.mp4

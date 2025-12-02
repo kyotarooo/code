@@ -1,0 +1,42 @@
+void FEM_MakeDMatrix(double e, double v, double d_matrix[6][6]) {
+  double c1 = e * (1.0 - v) / ((1.0 + v) * (1.0 - 2.0 * v));
+  double c2 = e * v / ((1.0 + v) * (1.0 - 2.0 * v));
+  double c3 = e / (2.0 * (1.0 + v));
+
+  d_matrix[0][0] = c1;
+  d_matrix[0][1] = c2;
+  d_matrix[0][2] = c2;
+  d_matrix[0][3] = 0.0;
+  d_matrix[0][4] = 0.0;
+  d_matrix[0][5] = 0.0;
+  d_matrix[1][0] = c2;
+  d_matrix[1][1] = c1;
+  d_matrix[1][2] = c2;
+  d_matrix[1][3] = 0.0;
+  d_matrix[1][4] = 0.0;
+  d_matrix[1][5] = 0.0;
+  d_matrix[2][0] = c2;
+  d_matrix[2][1] = c2;
+  d_matrix[2][2] = c1;
+  d_matrix[2][3] = 0.0;
+  d_matrix[2][4] = 0.0;
+  d_matrix[2][5] = 0.0;
+  d_matrix[3][0] = 0.0;
+  d_matrix[3][1] = 0.0;
+  d_matrix[3][2] = 0.0;
+  d_matrix[3][3] = c3;
+  d_matrix[3][4] = 0.0;
+  d_matrix[3][5] = 0.0;
+  d_matrix[4][0] = 0.0;
+  d_matrix[4][1] = 0.0;
+  d_matrix[4][2] = 0.0;
+  d_matrix[4][3] = 0.0;
+  d_matrix[4][4] = c3;
+  d_matrix[4][5] = 0.0;
+  d_matrix[5][0] = 0.0;
+  d_matrix[5][1] = 0.0;
+  d_matrix[5][2] = 0.0;
+  d_matrix[5][3] = 0.0;
+  d_matrix[5][4] = 0.0;
+  d_matrix[5][5] = c3;
+}
