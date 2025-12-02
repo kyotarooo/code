@@ -222,7 +222,7 @@ void DD_WriteDislocations(DD_t *dd, char *directory) {
   char file_name[256];
   FILE *fp;
 
-  sprintf(file_name, "%s/elem_%04d.vtk", directory, dd->output.id);
+  sprintf(file_name, "%s/out/elem_%04d.vtk", directory, dd->output.id);
   fp = fopen(file_name, "w");
 
   fprintf(fp, "# vtk DataFile Version 3.0\n");
