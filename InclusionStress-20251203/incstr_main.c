@@ -25,6 +25,10 @@
 //===============================================================================
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>   // 追加: 時刻取得用
+#include <stdarg.h> // 追加: 可変引数用
+#include "incstr_defs.h"
 
 #include "incstr_elliptic.h"
 #include "incstr_periodic.h"
@@ -37,35 +41,129 @@
 #include <omp.h>
 #endif
 
+// --- ログ出力用のヘルパー関数 ---
+FILE *log_fp = NULL;
+
+void WriteLog(const char *format, ...) {
+  if (log_fp == NULL) return;
+
+  // 現在時刻の取得
+  time_t rawtime;
+  struct tm *timeinfo;
+  char time_buffer[80];
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(time_buffer, 80, "%Y-%m-%d %H:%M:%S", timeinfo);
+
+  // ログファイルへの書き込み
+  fprintf(log_fp, "[%s] ", time_buffer);
+  
+  va_list args;
+  va_start(args, format);
+  vfprintf(log_fp, format, args);
+  va_end(args);
+  
+  fprintf(log_fp, "\n");
+  fflush(log_fp); // 即座にファイルに書き出す（重要）
+
+  // 標準出力にも同じ内容を出す（dd.logにも残るように）
+  printf("[%s] ", time_buffer);
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+  printf("\n");
+  fflush(stdout);
+}
+// --------------------------------
+
 int main(int argc, char **argv) {
   INCLUSION_t inclusion;
   GRID_CELL_t grid_cell;
   MATERIAL_t material;
+  char log_file_name[256];
 
   if (argc != 2) {
     fprintf(stderr, "Usage: %s <working_directory>\n", argv[0]);
     return 1;
   }
 
+  // ログファイルの準備
+  sprintf(log_file_name, "%s/incstr.log", argv[1]);
+  // sprintf :  書式を指定した文字列を生成する関数
+  log_fp = fopen(log_file_name, "w");
+  if (log_fp == NULL) {
+    fprintf(stderr, "Warning: Cannot create log file %s\n", log_file_name);
+  }
+
+  WriteLog("=== INCSTRGEN Start ===");
+
 #ifdef _OPENMP
-  omp_set_num_threads(8);
+  // OpenMPのスレッド数設定（環境変数 OMP_NUM_THREADS があればそれが優先される）
+  // omp_set_num_threads(8); // 必要なら固定値を設定
+  #pragma omp parallel
+  {
+      #pragma omp single
+      WriteLog("OpenMP enabled. Number of threads: %d", omp_get_num_threads());
+  }
+#else
+  WriteLog("OpenMP disabled. Running in serial mode.");
 #endif
 
-  // Read all input data
+  // 1. Read input data
+  WriteLog("Reading input files from: %s", argv[1]);
+  
   INCSTR_ReadInclusions(&inclusion, argv[1]);
+  WriteLog("  -> Inclusions loaded: %d", inclusion.n); 
+  // 介在物の数
+
+  for (int i = 0; i < inclusion.n; i++) {
+      if (inclusion.shape[i] == ELASTIC_DIPOLE) {
+          WriteLog("    - ID %d [Elastic Dipole]: Pos=(%e, %e, %e), Core Size a = %e", 
+                   i, 
+                   inclusion.x[i][0], inclusion.x[i][1], inclusion.x[i][2], // 座標
+                   inclusion.size[i][0]); // コアサイズ
+      } 
+      else if (inclusion.shape[i] == SPHERE) {
+          WriteLog("    - ID %d [Sphere]: Pos=(%e, %e, %e), Radius = %e", 
+                   i, 
+                   inclusion.x[i][0], inclusion.x[i][1], inclusion.x[i][2], // 座標
+                   inclusion.size[i][0]); // 半径
+      }
+  }
+
   INCSTR_ReadMaterial(&material, argv[1]);
+  WriteLog("  -> Material loaded: G=%e, v=%e", material.g, material.v);
+  WriteLog("  -> Simulation box: %e x %e x %e", material.size[0], material.size[1], material.size[2]);
+  
   INCSTR_ReadGrids(&grid_cell, &material, argv[1]);
- 
-  // Make numerical table for elliptical integral.
+  WriteLog("  -> Grids loaded. Max depth: %d", grid_cell.max_depth);
+  WriteLog("  -> Main grid size: %d x %d x %d", grid_cell.nx[0][0]-1, grid_cell.nx[0][1]-1, grid_cell.nx[0][2]-1);
+
+  // 2. Make elliptical integral table
+  WriteLog("Initializing Elliptic Integral Table...");
   INCSTR_MakeEllipticIntegralTable();
-  // Image cells are prepared to apply the periodic boundary condition
+
+  // 3. Prepare periodic images
+  WriteLog("Applying Periodic Boundary Conditions...");
   INCSTR_MakePeriodicImages(&material);
+  WriteLog("  -> Number of periodic images: %d", material.nImages);
 
-  // Calculate the internal stress of inclusions
+  // 4. Calculate stress
+  WriteLog("--- Calculation Start ---");
+  WriteLog("Calculating internal stress field... (This may take time)");
+  
+  // 計算実行
   INCSTR_InclusionStress(&inclusion, &material, &grid_cell);
+  
+  WriteLog("--- Calculation Finished ---");
 
-  // Output the calculated internal stress of inclusions
+  // 5. Write output
+  WriteLog("Writing output to grid_stress.inp...");
   INCSTR_WriteStress(&grid_cell, argv[1]);
+
+  WriteLog("=== All tasks completed successfully ===");
+
+  if (log_fp != NULL) fclose(log_fp);
 
   return 0;
 }

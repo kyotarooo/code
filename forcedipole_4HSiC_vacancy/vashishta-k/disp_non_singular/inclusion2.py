@@ -90,7 +90,7 @@ def main():
     xc1, xc2, xc3 = coordinate_v
     
     for cutoff in range(cutoff_num):
-        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input2/disp_{cutoff}_{a_core_width}"
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251203/input2/disp_{cutoff}_{a_core_width}"
         os.makedirs(mk_dir, exist_ok=True)
         with open(f'{mk_dir}/inclusion.inp', "w") as f_incl:
             f_incl.write("1\n")
@@ -104,6 +104,9 @@ def main():
                 if i == 2 or i == 5:
                     f_incl.write("\n")
             f_incl.write("\n")
+            f_incl.write("1.0 0.0 0.0")
+            f_incl.write("0.0 1.0 0.0")
+            f_incl.write("0.0 0.0 1.0")
             
     mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input2/residual_{a_core_width}"
     os.makedirs(mk_dir, exist_ok=True) 
@@ -117,6 +120,10 @@ def main():
             f_re.write(f"{P_r[5][i]} ")
             if i == 2 or i == 5:
                     f_re.write("\n")
+            f_re.write("\n")
+        f_incl.write("1.0 0.0 0.0")
+        f_incl.write("0.0 1.0 0.0")
+        f_incl.write("0.0 0.0 1.0")
 
 if __name__ == "__main__":
      main()
