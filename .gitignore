@@ -26,6 +26,7 @@ log.*
 # OVITO exports
 *.png
 *.jpg
+*.vtk
 
 # Python cache
 __pycache__/

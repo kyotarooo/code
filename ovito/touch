@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+OVITOで4H-SiC構造（LAMMPS data 等）を読み込み、
+・Si/C/N のタイプ名と色を設定
+・結合線生成（Si–C, Si–N, C–N）
+・AO + 影 + ハイライト で立体的にレンダリング
+・高解像度PNG出力
+を行うスクリプト（OVITO 3.12.0 対応）
+"""
+
+import argparse
+import os
+from math import radians
+from typing import Dict, Optional
+
+# OVITO API
+from ovito.io import import_file
+from ovito.modifiers import CreateBondsModifier, PythonScriptModifier
+from ovito.vis import Viewport, OpenGLRenderer, OSPRayRenderer, ParticlesVis
+
+
+# ================ UTILS =================
+
+def _vector3(value: str):
+    parts = value.split(",")
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError("Vector must have three comma-separated values")
+    return tuple(float(p) for p in parts)
+
+
+def _get_particle_types_container(data):
+    particles = getattr(data, "particles_", None) or getattr(data, "particles", None)
+    if particles is None:
+        return None
+    return getattr(particles, "particle_types_", None) or getattr(particles, "particle_types", None)
+
+
+def _type_by_id(types, tid: int):
+    if types is None:
+        return None
+    for accessor in ("type_by_id_", "type_by_id", "type"):
+        func = getattr(types, accessor, None)
+        if func:
+            try:
+                return func(tid)
+            except Exception:
+                pass
+    return None
+
+
+# ========== ★ Type Label Modifier (Si, C, N 対応) ==========
+
+def _type_label_modifier_factory(radius_map: Dict[int, Optional[float]]):
+    clean_radius = {tid: r for tid, r in (radius_map or {}).items() if r is not None}
+
+    def _apply(frame, data):
+        types = _get_particle_types_container(data)
+        if types is None:
+            return
+
+        def _apply_to_type(tid: int, name: str, color):
+            t = _type_by_id(types, tid)
+            if t is None:
+                return
+            t.name = name
+            t.color = color
+            if tid in clean_radius:
+                try:
+                    t.radius = clean_radius[tid]
+                except:
+                    pass
+
+        # ---- 原子タイプ定義 ----
+        _apply_to_type(1, "Si", (0.0, 0.65, 1.0))      # 青
+        _apply_to_type(2, "C",  (0.50, 1.00, 0.83))     # 薄オレンジ
+        _apply_to_type(3, "N",  (1.0, 0.10, 0.10))      # 赤（指定どおり）
+
+    return _apply
+
+
+# ========== Pipeline 構築 ==========
+
+def build_pipeline(input_path: str, cutoff12, cutoff13, cutoff23, radius_map):
+    node = import_file(input_path, atom_style='charge', multiple_frames=False)
+
+    # 粒子タイプ名・色・半径
+    node.modifiers.append(PythonScriptModifier(function=_type_label_modifier_factory(radius_map)))
+
+    # 結合生成
+    bond_mod = CreateBondsModifier()
+    try:
+        bond_mod.mode = CreateBondsModifier.Mode.Pairwise
+    except:
+        bond_mod.mode = CreateBondsModifier.Mode.Pairing
+
+    # --- 異種原子の結合距離 ---
+    bond_mod.set_pairwise_cutoff(1, 2, cutoff12)   # Si–C
+    bond_mod.set_pairwise_cutoff(1, 3, cutoff13)   # Si–N
+    bond_mod.set_pairwise_cutoff(2, 3, cutoff23)   # C–N
+
+    # 同種は結合しない
+    for tid in (1, 2, 3):
+        bond_mod.set_pairwise_cutoff(tid, tid, 0.0)
+
+    node.modifiers.append(bond_mod)
+    return node
+
+
+# ========== Bond 表示 ==========
+
+def _set_bond_vis_width(bonds_vis, bond_width: float):
+    if bonds_vis is None:
+        return False
+    for attr in ("width", "line_width"):
+        if hasattr(bonds_vis, attr):
+            try:
+                setattr(bonds_vis, attr, bond_width)
+                return True
+            except:
+                pass
+    return False
+
+
+def _configure_bond_visual(node, scene_obj, bond_width: float):
+    try:
+        if _set_bond_vis_width(scene_obj.display.bonds, bond_width):
+            return
+    except:
+        pass
+    try:
+        evaluated = node.compute()
+        bonds_vis = getattr(getattr(evaluated.particles, "bonds", None), "vis", None)
+        _set_bond_vis_width(bonds_vis, bond_width)
+    except:
+        pass
+
+
+# ========== Visual 設定 ==========
+
+def setup_visual(node, bond_width: float, specular: float):
+    scene_obj = node.add_to_scene()
+
+    pvis: ParticlesVis = getattr(scene_obj, "display", None)
+    if pvis:
+        try: pvis.shape = ParticlesVis.Shape.Sphere
+        except: pass
+
+        try: pvis.use_particle_types = True
+        except: pass
+
+        try: pvis.use_particle_radii = True
+        except: pass
+
+        try: pvis.radius = 0.0
+        except: pass
+
+        try: pvis.shading = ParticlesVis.Shading.Smooth
+        except:
+            try: pvis.shading = ParticlesVis.Shading.Phong
+            except: pass
+
+        # ハイライト
+        try:
+            if pvis.material:
+                pvis.material.specular_intensity = specular
+        except:
+            pass
+
+        try: pvis.outline_width = 0.0
+        except: pass
+
+    # Bond 表示
+    _configure_bond_visual(node, scene_obj, bond_width)
+
+    return scene_obj
+
+
+# ========== Rendering ==========
+
+def render_image(node, output_path: str, width: int, height: int, dpi: int,
+                camera_dir, camera_pos, zoom_factor: float, fov_deg: float,
+                specular_brightness: float):
+
+    vp = Viewport(type=Viewport.Type.Perspective)
+    vp.zoom_all()
+
+    # カメラ
+    vp.camera_dir = camera_dir
+    vp.camera_pos = camera_pos
+    vp.fov = radians(fov_deg)
+
+    if abs(zoom_factor - 1.0) > 1e-4:
+        try: vp.zoom(zoom_factor)
+        except: pass
+
+    # Renderer
+    try:
+        renderer = OSPRayRenderer()
+    except:
+        renderer = OpenGLRenderer()
+
+    # ---- ★ 立体感 MAX 設定（3.12.0対応） ----
+    try: renderer.antialiasing_level = 4
+    except: pass
+
+    try:
+        renderer.shadows_enabled = True
+        renderer.shadow_intensity = 0.8
+    except: pass
+
+    try:
+        renderer.ambient_occlusion_enabled = True
+        renderer.ambient_occlusion_intensity = 1.2
+        renderer.ambient_occlusion_radius = 3.0
+        renderer.ambient_occlusion_samples = 128
+    except: pass
+
+    try:
+        renderer.principled_specular_brightness = max(0.0, min(1.0, specular_brightness))
+        renderer.principled_specular_roughness = 0.1
+    except:
+        pass
+
+    try: renderer.background_color = (1, 1, 1)
+    except: pass
+
+    # 出力
+    vp.render_image(
+        filename=output_path,
+        size=(width, height),
+        renderer=renderer
+    )
+
+    # DPI 設定
+    try:
+        from PIL import Image
+        im = Image.open(output_path)
+        im.save(output_path, dpi=(dpi, dpi))
+    except:
+        pass
+
+
+# ========== MAIN ==========
+
+def main():
+    parser = argparse.ArgumentParser(description="Render 4H-SiC + N with OVITO 3.12")
+
+    parser.add_argument("--input", type=str, required=True)
+    parser.add_argument("--output", type=str, default="./render.png")
+
+    # --- 半径設定 ---
+    parser.add_argument("--radius", type=float, default=None)
+    parser.add_argument("--radius-si", type=float, default=None)
+    parser.add_argument("--radius-c",  type=float, default=None)
+    parser.add_argument("--radius-t3", type=float, default=None, help="N 原子の半径（未指定なら Si と同じ）")
+
+    # --- 結合距離 ---
+    parser.add_argument("--cutoff-12", type=float, default=1.9)
+    parser.add_argument("--cutoff-13", type=float, default=1.9)
+    parser.add_argument("--cutoff-23", type=float, default=1.9)
+
+    # Render options
+    parser.add_argument("--bondwidth", type=float, default=0.1)
+    parser.add_argument("--width", type=int, default=2400)
+    parser.add_argument("--height", type=int, default=1800)
+    parser.add_argument("--dpi", type=int, default=300)
+    parser.add_argument("--zoom", type=float, default=1.0)
+    parser.add_argument("--camera-dir", type=_vector3, default=(-1.3, -1.0, -0.8))
+    parser.add_argument("--camera-pos", type=_vector3, default=(28, 18, 16))
+    parser.add_argument("--fov", type=float, default=30.0)
+    parser.add_argument("--specular", type=float, default=0.6)
+    parser.add_argument("--shininess", type=float, default=0.9)
+
+    args = parser.parse_args()
+
+    # ---- 半径マップ（N は Si と同じ）----
+    radius_map = {
+        1: args.radius_si if args.radius_si is not None else args.radius,
+        2: args.radius_c  if args.radius_c  is not None else args.radius,
+        3: args.radius_t3 if args.radius_t3 is not None else args.radius_si,
+    }
+
+    # Pipeline
+    node = build_pipeline(args.input, args.cutoff_12, args.cutoff_13, args.cutoff_23, radius_map)
+    setup_visual(node, args.bondwidth, args.specular)
+
+    # 保存先ディレクトリ
+    os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
+
+    # Rendering
+    render_image(
+        node, args.output, args.width, args.height, args.dpi,
+        camera_dir=args.camera_dir, camera_pos=args.camera_pos,
+        zoom_factor=args.zoom, fov_deg=args.fov,
+        specular_brightness=args.shininess,
+    )
+
+    print(f"[OK] Rendered → {args.output}")
+
+
+if __name__ == "__main__":
+   
