@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       DD_WriteDislocations(&dd, argv[1]);
       DD_WriteMechanicalBehavior(&dd, argv[1]);
       DD_FEM_WriteDislocationDensity(&dd, &fem, argv[1]);
-      //DD_PlotDislocations(&dd);
+      DD_PlotDislocations(&dd);
       dd.output.id += 1;
     }
 

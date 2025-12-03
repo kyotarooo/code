@@ -1,0 +1,375 @@
+#include "dd_struct.h"
+#include "dd_periodic_bc.h"
+#include "dd_dislocation_stress.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+static void FiniteDislocationElementStress
+(int elementID, double xi[3], DD_t *dd, double stress[3][3])
+{
+  double x = xi[0];
+  double y = xi[1];
+  double z = xi[2];  
+  ELEMENT_t *element = &dd->element[elementID];
+  int nodeID0 = element->nodeID[0];
+  int nodeID1 = element->nodeID[1];
+  NODE_t *node0 = &dd->node[nodeID0];
+  NODE_t *node1 = &dd->node[nodeID1];
+  double x0 = node0->x[0];
+  double y0 = node0->x[1];
+  double z0 = node0->x[2];
+  double x1 = node1->x[0];
+  double y1 = node1->x[1];
+  double z1 = node1->x[2];
+  double g = dd->material.g;
+  double v = dd->material.v;
+  double a = dd->material.a_core;
+  double a2 = a*a;
+  double tx = element->tangent[0];
+  double ty = element->tangent[1];
+  double tz = element->tangent[2];
+  double bx = element->burgers[0];
+  double by = element->burgers[1];
+  double bz = element->burgers[2];
+  int px = dd->bc.periodic[0];
+  int py = dd->bc.periodic[1];
+  int pz = dd->bc.periodic[2];
+  double sx = dd->bc.size[0];
+  double sy = dd->bc.size[1];
+  double sz = dd->bc.size[2];
+  double rx, ry, rz, rdt;
+  double dx, dy, dz, d2 = 0.0;
+  double a2d2inv, rainv, ra3inv, s;
+  double c00, c01, c02, c03, c04;
+  double c10, c11, c12, c13, c14;
+  double c0, c1, c2, c3, c4;
+  double g4p = g / (4.0*M_PI);
+  double g4pv = g4p / (1.0 - v);
+  double g8p = g4p / 2.0;
+  double dxbx, dxby, dxbz, dxbdt;
+  double txbx, txby, txbz;
+  double g4pv_dxbdt, g8p_a2;
+  double d00, d01, d02, d10, d20, d21, d22, d30, d31, d40;
+
+  // position of edge nodes
+  if (px) {
+    double dx = x0 - x;
+    if (dx < -0.5*sx) x0 += sx;
+    else if (dx > 0.5*sx) x0 -= sx;
+    dx = x1 - x0;
+    if (dx < -0.5*sx) x1 += sx;
+    else if (dx > 0.5*sx) x1 -= sx;
+  }
+  if (py) {
+    double dy = y0 - y;
+    if (dy < -0.5*sy) y0 += sy;
+    else if (dy > 0.5*sy) y0 -= sy;
+    dy = y1 - y0;
+    if (dy < -0.5*sy) y1 += sy;
+    else if (dy > 0.5*sy) y1 -= sy;  
+  }
+  if (pz) {
+    double dz = z0 - z;
+    if (dz < -0.5*sz) z0 += sz;
+    else if (dz > 0.5*sz) z0 -= sz;
+    dz = z1 - z0;
+    if (dz < -0.5*sz) z1 += sz;
+    else if (dz > 0.5*sz) z1 -= sz;  
+  }
+
+  // distance vector from the element
+  rx = x - x0;
+  ry = y - y0;
+  rz = z - z0;
+  rdt = rx*tx + ry*ty + rz*tz;
+  dx = rx - rdt*tx;
+  dy = ry - rdt*ty;
+  dz = rz - rdt*tz;
+  d2 = dx*dx + dy*dy + dz*dz;
+
+  // coefficients
+  a2d2inv = 1.0 / (a2 + d2);
+  rx = x - x0;
+  ry = y - y0;
+  rz = z - z0;
+  rdt = rx*tx + ry*ty + rz*tz;
+  s = -1.0*rdt;
+  rainv = 1.0 / sqrt (a2 + d2 + rdt*rdt);
+  ra3inv = rainv*rainv*rainv;
+  c00 = s*rainv*a2d2inv;
+  c01 = -1.0*rainv;
+  c02 = (2.0*c00 + s*ra3inv)*a2d2inv;
+  c03 = -1.0*ra3inv;
+  c04 = c00 - s*ra3inv;
+  rx = x - x1;
+  ry = y - y1;
+  rz = z - z1;
+  rdt = rx*tx + ry*ty + rz*tz;
+  s = -1.0*rdt;
+  rainv = 1.0 / sqrt (a2 + d2 + rdt*rdt);
+  ra3inv = rainv*rainv*rainv;
+  c10 = s*rainv*a2d2inv;
+  c11 = -1.0*rainv;
+  c12 = (2.0*c10 + s*ra3inv)*a2d2inv;
+  c13 = -1.0*ra3inv;
+  c14 = c10 - s*ra3inv;  
+  c0 = c10 - c00;
+  c1 = c11 - c01;
+  c2 = c12 - c02;
+  c3 = c13 - c03;
+  c4 = c14 - c04;  
+
+  dxbx = dy*bz - dz*by;
+  dxby = dz*bx - dx*bz;
+  dxbz = dx*by - dy*bx;
+  txbx = ty*bz - tz*by;
+  txby = tz*bx - tx*bz;
+  txbz = tx*by - ty*bx;
+  dxbdt = dxbx*tx + dxby*ty + dxbz*tz;
+
+  g4pv_dxbdt = g4pv*dxbdt;
+  g8p_a2 = g8p*a2;
+
+  d00 = c0*g4pv_dxbdt;
+  d01 = c0*g4pv;
+  d02 = c0*g4p;
+  d10 = c1*g4pv*v;
+  d20 = c2*g4pv_dxbdt;
+  d21 = c2*g4pv_dxbdt*a2;
+  d22 = c2*g8p_a2;
+  d30 = c3*g8p_a2;
+  d31 = c3*g4pv_dxbdt;
+  d40 = c4*g4pv_dxbdt;
+
+  d00 += d21;
+  d01 -= d30;
+  d02 += d22;
+
+  stress[0][0]
+    += d00 + 2.0*(d01*dx*txbx - d02*tx*dxbx - d10*tx*txbx - d31*tx*dx)
+    + d20*dx*dx + d40*tx*tx;
+  stress[0][1]
+    += d01*(dx*txby + dy*txbx) - d02*(tx*dxby + ty*dxbx) - d10*(tx*txby + ty*txbx)
+    + d20*dx*dy - d31*(tx*dy + ty*dx) + d40*tx*ty;
+  stress[0][2]
+    += d01*(dx*txbz + dz*txbx) - d02*(tx*dxbz + tz*dxbx) - d10*(tx*txbz + tz*txbx)
+    + d20*dx*dz - d31*(tx*dz + tz*dx) + d40*tx*tz;  
+  stress[1][1]
+    += d00 + 2.0*(d01*dy*txby - d02*ty*dxby - d10*ty*txby - d31*ty*dy)
+    + d20*dy*dy + d40*ty*ty;
+  stress[1][2]
+    += d01*(dy*txbz + dz*txby) - d02*(ty*dxbz + tz*dxby) - d10*(ty*txbz + tz*txby)
+    + d20*dy*dz - d31*(ty*dz + tz*dy) + d40*ty*tz;  
+  stress[2][2]
+    += d00 + 2.0*(d01*dz*txbz - d02*tz*dxbz - d10*tz*txbz - d31*tz*dz)
+    + d20*dz*dz + d40*tz*tz;    
+}
+
+#ifdef _NOTERMINATION_
+static void SemiInfiniteDislocationElementStress
+(int elementID, double xi[3], DD_t *dd, double stress[3][3])
+{
+  double x = xi[0];
+  double y = xi[1];
+  double z = xi[2];  
+  ELEMENT_t *element = &dd->element[elementID];
+  int nodeID0 = element->nodeID[0];
+  int nodeID1 = element->nodeID[1];
+  NODE_t *node0 = &dd->node[nodeID0];
+  NODE_t *node1 = &dd->node[nodeID1];
+  double x0 = node0->x[0];
+  double y0 = node0->x[1];
+  double z0 = node0->x[2];
+  double x1 = node1->x[0];
+  double y1 = node1->x[1];
+  double z1 = node1->x[2];
+  double g = dd->material.g;
+  double v = dd->material.v;
+  double a = dd->material.a_core;
+  double a2 = a*a;
+  double tx = element->tangent[0];
+  double ty = element->tangent[1];
+  double tz = element->tangent[2];
+  double bx = element->burgers[0];
+  double by = element->burgers[1];
+  double bz = element->burgers[2];
+  int px = dd->bc.periodic[0];
+  int py = dd->bc.periodic[1];
+  int pz = dd->bc.periodic[2];
+  double sx = dd->bc.size[0];
+  double sy = dd->bc.size[1];
+  double sz = dd->bc.size[2];
+  double rx, ry, rz, rdt;
+  double dx, dy, dz, d2 = 0.0;
+  double a2d2inv, rainv, ra3inv, s;
+  double c0, c1, c2, c3, c4;
+  double g4p = g / (4.0*M_PI);
+  double g4pv = g4p / (1.0 - v);
+  double g8p = g4p / 2.0;
+  double dxbx, dxby, dxbz, dxbdt;
+  double txbx, txby, txbz;
+  double g4pv_dxbdt, g8p_a2;
+  double d00, d01, d02, d10, d20, d21, d22, d30, d31, d40;
+
+  // position of edge nodes
+  if (px) {
+    double dx = x0 - x;
+    if (dx < -0.5*sx) x0 += sx;
+    else if (dx > 0.5*sx) x0 -= sx;
+    dx = x1 - x0;
+    if (dx < -0.5*sx) x1 += sx;
+    else if (dx > 0.5*sx) x1 -= sx;
+  }
+  if (py) {
+    double dy = y0 - y;
+    if (dy < -0.5*sy) y0 += sy;
+    else if (dy > 0.5*sy) y0 -= sy;
+    dy = y1 - y0;
+    if (dy < -0.5*sy) y1 += sy;
+    else if (dy > 0.5*sy) y1 -= sy;  
+  }
+  if (pz) {
+    double dz = z0 - z;
+    if (dz < -0.5*sz) z0 += sz;
+    else if (dz > 0.5*sz) z0 -= sz;
+    dz = z1 - z0;
+    if (dz < -0.5*sz) z1 += sz;
+    else if (dz > 0.5*sz) z1 -= sz;  
+  }
+
+  // distance vector from the element
+  rx = x - x0;
+  ry = y - y0;
+  rz = z - z0;
+  rdt = rx*tx + ry*ty + rz*tz;
+  dx = rx - rdt*tx;
+  dy = ry - rdt*ty;
+  dz = rz - rdt*tz;
+  d2 = dx*dx + dy*dy + dz*dz;
+
+  // coefficients
+  if (node0->nElements == 1) {
+    tx *= -1.0;
+    ty *= -1.0;
+    tz *= -1.0;
+    bx *= -1.0;
+    by *= -1.0;
+    bz *= -1.0;
+
+    a2d2inv = 1.0 / (a2 + d2);
+    rx = x - x0;
+    ry = y - y0;		
+    rz = z - z0;
+    rdt = rx*tx + ry*ty + rz*tz;
+    s = -1.0*rdt;
+    rainv = 1.0 / sqrt (a2 + d2 + rdt*rdt);
+    ra3inv = rainv*rainv*rainv;
+    c0 = (1.0 - s*rainv)*a2d2inv;
+    c1 = rainv;
+    c2 = (2.0*c0 - s*ra3inv)*a2d2inv;
+    c3 = ra3inv;
+    c4 = c0 + s*ra3inv;    
+  } else {
+    a2d2inv = 1.0 / (a2 + d2);
+    rx = x - x1;
+    ry = y - y1;		
+    rz = z - z1;
+    rdt = rx*tx + ry*ty + rz*tz;
+    s = -1.0*rdt;
+    rainv = 1.0 / sqrt (a2 + d2 + rdt*rdt);
+    ra3inv = rainv*rainv*rainv;
+    c0 = (1.0 - s*rainv)*a2d2inv;
+    c1 = rainv;
+    c2 = (2.0*c0 - s*ra3inv)*a2d2inv;
+    c3 = ra3inv;
+    c4 = c0 + s*ra3inv;    
+  }
+
+  dxbx = dy*bz - dz*by;
+  dxby = dz*bx - dx*bz;
+  dxbz = dx*by - dy*bx;
+  txbx = ty*bz - tz*by;
+  txby = tz*bx - tx*bz;
+  txbz = tx*by - ty*bx;
+  dxbdt = dxbx*tx + dxby*ty + dxbz*tz;
+
+  g4pv_dxbdt = g4pv*dxbdt;
+  g8p_a2 = g8p*a2;
+
+  d00 = c0*g4pv_dxbdt;
+  d01 = c0*g4pv;
+  d02 = c0*g4p;
+  d10 = c1*g4pv*v;
+  d20 = c2*g4pv_dxbdt;
+  d21 = c2*g4pv_dxbdt*a2;
+  d22 = c2*g8p_a2;
+  d30 = c3*g8p_a2;
+  d31 = c3*g4pv_dxbdt;
+  d40 = c4*g4pv_dxbdt;
+
+  d00 += d21;
+  d01 -= d30;
+  d02 += d22;
+
+  stress[0][0]
+    += d00 + 2.0*(d01*dx*txbx - d02*tx*dxbx - d10*tx*txbx - d31*tx*dx)
+    + d20*dx*dx + d40*tx*tx;
+  stress[0][1]
+    += d01*(dx*txby + dy*txbx) - d02*(tx*dxby + ty*dxbx) - d10*(tx*txby + ty*txbx)
+    + d20*dx*dy - d31*(tx*dy + ty*dx) + d40*tx*ty;
+  stress[0][2]
+    += d01*(dx*txbz + dz*txbx) - d02*(tx*dxbz + tz*dxbx) - d10*(tx*txbz + tz*txbx)
+    + d20*dx*dz - d31*(tx*dz + tz*dx) + d40*tx*tz;  
+  stress[1][1]
+    += d00 + 2.0*(d01*dy*txby - d02*ty*dxby - d10*ty*txby - d31*ty*dy)
+    + d20*dy*dy + d40*ty*ty;
+  stress[1][2]
+    += d01*(dy*txbz + dz*txby) - d02*(ty*dxbz + tz*dxby) - d10*(ty*txbz + tz*txby)
+    + d20*dy*dz - d31*(ty*dz + tz*dy) + d40*ty*tz;  
+  stress[2][2]
+    += d00 + 2.0*(d01*dz*txbz - d02*tz*dxbz - d10*tz*txbz - d31*tz*dz)
+    + d20*dz*dz + d40*tz*tz;      
+}
+#endif
+
+void DD_DislocationStress (double x[3], DD_t *dd, double stress[3][3])
+{
+  // Initailize
+  stress[0][0] = 0.0;
+  stress[0][1] = 0.0;
+  stress[0][2] = 0.0;
+  stress[1][0] = 0.0;
+  stress[1][1] = 0.0;
+  stress[1][2] = 0.0;
+  stress[2][0] = 0.0;
+  stress[2][1] = 0.0;
+  stress[2][2] = 0.0;  
+  
+  // Stress due to dislocation elements
+  for (int iElement = 0; iElement < dd->nElements; iElement++) {
+    FiniteDislocationElementStress (iElement, x, dd, stress);
+  }
+
+#ifdef _NOTERMINATION_
+  // Stress due to semi-infinite dislocation element
+  for (int iElement = 0; iElement < dd->nElements; iElement++) {
+    ELEMENT_t *element = &dd->element[iElement];
+
+    for (int iNode = 0; iNode < 2; iNode++) {
+      int nodeID = element->nodeID[iNode];
+      NODE_t *node = &dd->node[nodeID];
+
+      if (node->nElements == 1) {
+	SemiInfiniteDislocationElementStress (iElement, x, dd, stress);
+	break;
+      }
+    }
+  }
+#endif
+
+  // Stress tensor is symmetric
+  stress[1][0] = stress[0][1];
+  stress[2][0] = stress[0][2];
+  stress[2][1] = stress[1][2];
+}
