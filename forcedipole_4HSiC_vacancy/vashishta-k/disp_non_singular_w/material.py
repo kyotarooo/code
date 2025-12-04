@@ -1,5 +1,5 @@
 # =========================================================================================
-# inclusion.inp作成
+# material.inp作成
 # =========================================================================================
 
 import numpy as np #type: ignore
@@ -83,41 +83,49 @@ with open(f"{output_dir}/N_atom_perfect.txt", "r") as f_atoms:
     for i in range(len(atom)):
         atoms = [float(line.strip()) for line in atom]
 
+############ Generate supercell points along diagonal ############
+with open(f"{output_dir}/supercell.txt", "r") as f_cell:
+    lines = f_cell.readlines()
+    cell = np.array([float(v) for v in lines[5].split()])
+    
 
 def main():
-
-    coordinate_v = read_vacancydata(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{6}")  # ←←←←←←←←←←←←←←←←←←N = 959 deleted_atomは1~8
-    xc1, xc2, xc3 = coordinate_v
-    
     for cutoff in range(cutoff_num):
         mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/disp_{cutoff}_{a_core_width}"
         os.makedirs(mk_dir, exist_ok=True)
-        with open(f'{mk_dir}/inclusion.inp', "w") as f_incl:
-            f_incl.write("1\n")
-            f_incl.write("elastic_dipole\n")
-            f_incl.write("0.0 ")
-            f_incl.write(f"{a_core_width:e}\n")
-            f_incl.write(f"{xc1 * conv_ang_to_m} {xc2 * conv_ang_to_m} {xc3 * conv_ang_to_m}\n")
-            
-            for i in range(9):
-                f_incl.write(f"{P[cutoff][5][i]} ")   # ←←←←←←←←←←←←←←←←←←N = 959
-                if i == 2 or i == 5:
-                    f_incl.write("\n")
-            f_incl.write("\n")
+        with open(f'{mk_dir}/material.inp', "w") as f_incl:
+            f_incl.write("1.0 0.0 0.0\n")
+            f_incl.write("0.0 1.0 0.0\n")
+            f_incl.write("0.0 0.0 1.0\n")
+            f_incl.write("1 1 1\n")
+            f_incl.write(f"{cell[0] * conv_ang_to_m} {cell[1] * conv_ang_to_m} {cell[2] * conv_ang_to_m}\n")
+            f_incl.write("1.92965e+11 2.01281e-01")
             
     mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/residual_{a_core_width}"
-    os.makedirs(mk_dir, exist_ok=True) 
-    with open(f'{mk_dir}/inclusion.inp', "w") as f_re:
-        f_re.write("1\n")
-        f_re.write("elastic_dipole\n")
-        f_re.write("0.0 ")
-        f_re.write(f"{a_core_width:e}\n")
-        f_re.write(f"{xc1 * conv_ang_to_m} {xc2 * conv_ang_to_m} {xc3 * conv_ang_to_m}\n")
-        for i in range(9):
-            f_re.write(f"{P_r[5][i]} ")
-            if i == 2 or i == 5:
-                    f_re.write("\n")
-
+    os.makedirs(mk_dir, exist_ok=True)
+    with open(f'{mk_dir}/material.inp', "w") as f_re:
+        f_re.write("1.0 0.0 0.0\n")
+        f_re.write("0.0 1.0 0.0\n")
+        f_re.write("0.0 0.0 1.0\n")
+        f_re.write("1 1 1\n")
+        f_re.write(f"{cell[0] * conv_ang_to_m} {cell[1] * conv_ang_to_m} {cell[2] * conv_ang_to_m}\n")
+        f_re.write("1.92965e+11 2.01281e-01")
+            
+    for cutoff in range(cutoff_num):
+        mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/disp_{cutoff}_{a_core_width}"
+        os.makedirs(mk_dir, exist_ok=True)        
+        with open(f'{mk_dir}/grid.inp', "w") as f_incl:
+            f_incl.write("2\n")
+            f_incl.write("100 100 100\n")
+            f_incl.write("10 10 10\n")
+            
+    mk_dir = f"/Users/kyou/Library/CloudStorage/Box-Box/code/InclusionStress-20251127/input/residual_{a_core_width}"
+    os.makedirs(mk_dir, exist_ok=True)           
+    with open(f'{mk_dir}/grid.inp', "w") as f_re:
+        f_re.write("2\n")
+        f_re.write("100 100 100\n")
+        f_re.write("10 10 10\n")
+    
 if __name__ == "__main__":
      main()
 
