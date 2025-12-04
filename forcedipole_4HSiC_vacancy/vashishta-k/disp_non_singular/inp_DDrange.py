@@ -105,7 +105,7 @@ def main():
             f_ma_d.write("0.0 1.0 0.0\n")
             f_ma_d.write("0.0 0.0 1.0\n")
             f_ma_d.write("1 1 1\n")
-            f_ma_d.write(f"{100 * conv_ang_to_m} {100 * conv_ang_to_m} {100 * conv_ang_to_m}\n")
+            f_ma_d.write(f"{200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e}\n")
             f_ma_d.write("1.92965e+11 2.01281e-01")
             
         with open(f'{mk_dir}/inclusion.inp', "w") as f_incl_d:
@@ -113,7 +113,7 @@ def main():
             f_incl_d.write("elastic_dipole\n")
             f_incl_d.write("0.0 ")
             f_incl_d.write(f"{a_core_width:e}\n")
-            f_incl_d.write(f"{50 * conv_ang_to_m} {50 * conv_ang_to_m} {50 * conv_ang_to_m}\n")
+            f_incl_d.write(f"{100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e}\n")
             for i in range(9):
                 f_incl_d.write(f"{P[cutoff][5][i]} ")   # ←←←←←←←←←←←←←←←←←←N = 959
                 if i == 2 or i == 5:
@@ -125,12 +125,12 @@ def main():
                  
         with open(f'{mk_dir}/grid.inp', "w") as f_grid_d:
             f_grid_d.write("2\n")
-            f_grid_d.write("300 300 300\n")
-            f_grid_d.write("10 10 10\n")
+            f_grid_d.write("200 200 200\n")
+            f_grid_d.write("15 15 15\n")
             
         with open(f'{mk_dir}/section.inp', "w") as f_sec_d:
-            f_sec_d.write(f"{100 * conv_ang_to_m} {100 * conv_ang_to_m} {100 * conv_ang_to_m}\n")
-            f_sec_d.write(f"{50 * conv_ang_to_m} {50 * conv_ang_to_m} {50 * conv_ang_to_m}\n")
+            f_sec_d.write(f"{200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e}\n")
+            f_sec_d.write(f"{100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e} {(100 + 1) * conv_ang_to_m:.6e}\n")
             f_sec_d.write("0.0 0.0 1.0\n")
             f_sec_d.write("1.0 0.0 0.0\n")
             f_sec_d.write("0.0 0.0 1.0\n")
@@ -144,7 +144,7 @@ def main():
         f_ma.write("0.0 1.0 0.0\n")
         f_ma.write("0.0 0.0 1.0\n")
         f_ma.write("1 1 1\n")
-        f_ma.write(f"{cell[0] * conv_ang_to_m * 10:.6e} {cell[1] * conv_ang_to_m * 10:6e} {cell[2] * conv_ang_to_m * 10:6e}\n")
+        f_ma.write(f"{200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:6e} {200 * conv_ang_to_m:6e}\n")
         f_ma.write("1.92965e+11 2.01281e-01")
         
     with open(f'{mk_dir}/inclusion.inp', "w") as f_incl:
@@ -152,7 +152,7 @@ def main():
         f_incl.write("elastic_dipole\n")
         f_incl.write("0.0 ")
         f_incl.write(f"{a_core_width:e}\n")
-        f_incl.write(f"{xc1 * conv_ang_to_m * 10:.6e} {xc2 * conv_ang_to_m * 10:.6e} {xc3 * conv_ang_to_m * 10:.6e}\n")
+        f_incl.write(f"{100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e}\n")
         for i in range(9):
             f_incl.write(f"{P_r[5][i]} ")
             if i == 2 or i == 5:
@@ -168,8 +168,8 @@ def main():
         f_grid.write("15 15 15\n")
     
     with open(f'{mk_dir}/section.inp', "w") as f_sec:
-        f_sec.write(f"{cell[0] * conv_ang_to_m * 10:.6e} {cell[1] * conv_ang_to_m * 10:.6e} {cell[2] * conv_ang_to_m * 10:.6e}\n")
-        f_sec.write(f"{xc1 * conv_ang_to_m * 10:.6e} {xc2 * conv_ang_to_m * 10:.6e} {xc3 * conv_ang_to_m * 10:.6e}\n")
+        f_sec.write(f"{200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e} {200 * conv_ang_to_m:.6e}\n")
+        f_sec.write(f"{100 * conv_ang_to_m:.6e} {100 * conv_ang_to_m:.6e} {(100 + 1) * conv_ang_to_m:.6e}\n")
         f_sec.write("0.0 0.0 1.0\n")
         f_sec.write("1.0 0.0 0.0\n")
         f_sec.write("0.0 0.0 1.0\n")
