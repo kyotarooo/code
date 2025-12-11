@@ -13,8 +13,6 @@ if output_dir is None:
 
 import math
 from numpy import array #type: ignore
-import numpy as np #type: ignore
-
 class SiC:
     d = 3.07659964
     a1 = d
@@ -182,8 +180,8 @@ class SiC:
                 count += 1
 
 
-#n_list = [[1, 1, 1], [2, 1, 1], [2, 2, 1], [3, 2, 1], [2, 3, 2], [4, 3, 2], [3, 3, 3], [5, 3, 3], [3, 4, 3], [5, 4, 3], [4, 6, 3], [8, 6, 3], [5, 7, 3], [10, 7, 3]]
-n_list = [[1, 1, 1], [2, 1, 1], [3, 2, 1], [4, 3, 2], [5, 3, 3], [5, 4, 3], [8, 6, 3], [10, 7, 3]]
+
+n_list = [[2, 1, 1], [3, 2, 1], [4, 3, 2], [5, 3, 3], [5, 4, 3], [8, 6, 3], [10, 7, 3]]
 if __name__ == "__main__":
     id = 0
     with open(f"{output_dir}/4hsic_q/filename.txt" , "w") as f_f:
@@ -192,13 +190,13 @@ if __name__ == "__main__":
             pattern = "abac"
             # --------------------------------
             a = SiC(pattern, nx, ny, nz)
-            id = id + 1
-            a.outAtomeye(open("test0.cfg", "w"))
             a.outLammpsd(open(f"{output_dir}/4hsic/{id}_in.sic", "w"))
             a.outLammpsdq(open(f"{output_dir}/4hsic_q/{id}_in.sicq", "w"))
             f_f.write(f"{id}_in.sicq\n")
-            
+            save_dir = f"{output_dir}/include"
+            os.makedirs(save_dir, exist_ok=True)
             with open(f"{output_dir}/include/{id}_include_n", "w") as f:
                 print("variable nx equal %d" % nx, file=f)
                 print("variable ny equal %d" % ny, file=f)
                 print("variable nz equal %d" % nz, file=f)
+            id = id + 1

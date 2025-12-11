@@ -17,7 +17,7 @@ read method
 
 ####### 出力ファイルのパス ########
 output_base_dir=~/Library/CloudStorage/Box-Box/output
-output_dir=/$method/$material/$defect
+output_dir=$method/$material/$defect
 code_dir=~/Library/CloudStorage/Box-Box/code/$method
 full_output_dir=$output_base_dir/$output_dir
 echo "-------------------------------------------------"
@@ -27,7 +27,7 @@ echo "Press [Enter]"
 read  
 
 ######## 削除する原子の指定 ######## ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←minimize.pyも変更する
-target_atom=0
+target_atom=5
 
 ####### make directory ########
 # base output file
@@ -61,13 +61,13 @@ mkdir -p "$full_output_dir/dump/defect_lattice/defect_lattice_${target_atom}"
 rm -rf "$full_output_dir/dump/deleted_atom/deleted_atom_${target_atom}"
 mkdir -p "$full_output_dir/dump/deleted_atom/deleted_atom_${target_atom}"
 
-# displacement data
-rm -rf "$full_output_dir/dump/displacement/displacement_${target_atom}"
-mkdir -p "$full_output_dir/dump/displacement/displacement_${target_atom}"
+# # displacement data
+# rm -rf "$full_output_dir/dump/displacement/displacement_${target_atom}"
+# mkdir -p "$full_output_dir/dump/displacement/displacement_${target_atom}"
 
-# displacement (ovit)
-rm -rf "$full_output_dir/dump/displacement_ovit/displacement_ovit_${target_atom}"
-mkdir -p "$full_output_dir/dump/displacement_ovit/displacement_ovit_${target_atom}"
+# # displacement (ovit)
+# rm -rf "$full_output_dir/dump/displacement_ovit/displacement_ovit_${target_atom}"
+# mkdir -p "$full_output_dir/dump/displacement_ovit/displacement_ovit_${target_atom}"
 
 # 4hsic_vacancy
 rm -rf "$full_output_dir/4hsic_vacancy/atom_type_delete_${target_atom}"

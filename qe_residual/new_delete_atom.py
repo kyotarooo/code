@@ -9,6 +9,7 @@ Atomsの形式: id type x y z q
 
 import math
 import os
+import numpy as np
 
 ######## 環境変数の取得 ########
 output_dir = os.environ.get("OUTPUT_PATH")
@@ -31,7 +32,7 @@ output_file = "sic_vac.data"   # 出力ファイル名
 
 ####### 単位胞のデータ(4H-SiC) ########
 base_atoms = [                                   #(六方晶site or 立方晶site) : target atom
-    [1, 0.000000, 0.000000, 0.000000, 0.000000], #(k):0
+    [1, 0.000000, 0.000000, 0.000000, 0.000000], #(k):0 ← Si
     [1, 0.000000, 1.538300, 2.664413, 0.000000], #(k):1
     [1, 0.000000, 0.000000, 1.776276, 2.512033], #(h):2
     [1, 0.000000, 1.538300, 4.440689, 2.512033], #(h):3
@@ -39,7 +40,7 @@ base_atoms = [                                   #(六方晶site or 立方晶sit
     [1, 0.000000, 1.538300, 2.664413, 5.024066], #(k):5
     [1, 0.000000, 0.000000, 3.552551, 7.536099], #(h):6
     [1, 0.000000, 1.538300, 0.888138, 7.536099], #(h):7
-    [2, 0.000000, 0.000000, 1.776276, 0.628008], #(k):8
+    [2, 0.000000, 0.000000, 1.776276, 0.628008], #(k):8　← C
     [2, 0.000000, 1.538300, 4.440689, 0.628008], #(k):9
     [2, 0.000000, 0.000000, 0.000000, 3.140041], #(h):10
     [2, 0.000000, 1.538300, 2.664413, 3.140041], #(h):11
@@ -50,9 +51,11 @@ base_atoms = [                                   #(六方晶site or 立方晶sit
 ]
 #1: Si
 #2: C
+nnd = (0.00-0.00)**2 + (1.776276-0.00)**2 + (0.628008 - 0.00)**2 # nearest neibor distance ** 2
+
 
 with open(f"{output_dir}/4hsic_vacancy/atom_type_delete_{atom_type_to_delete}/filename.txt" , "w") as f_f:
-    for m in range(8):
+    for m in range(7):
         m = m + 1
         ####### 繰り返し個数の取得 ########
         with open(f"{output_dir}/include/{m}_include_n", 'r') as f_include:
@@ -112,21 +115,41 @@ with open(f"{output_dir}/4hsic_vacancy/atom_type_delete_{atom_type_to_delete}/fi
             # 指定した座標の(最も近い)原子を探す
             closest_idx = None
             closest_dist2 = 1000000
-
+            nnd_atom = {i: [] for i in range(3)} #第一近接原子は３つ
+            nnd_num = 0
+            
             for idx, line in enumerate(atom_lines):
                 parts = line.strip().split()
                 atom_id = int(parts[0])
                 atom_type = int(parts[1])
                 x, y, z = float(parts[3]), float(parts[4]), float(parts[5])
-                d2 = (x - xc)**2 + (y - yc)**2 + (z - zc)**2
+                dx = x - xc
+                dy = y - yc
+                dz = z - zc 
+                d2 = dx**2 + dy**2 + dz**2
                 
                 if  d2 < closest_dist2:
                     closest_dist2 = d2
                     closest_idx = idx
+                    
+                if nnd - 0.01 < d2 < nnd + 0.01:
+                    vector = - 1.09 * np([dx, dy, dz]) / math.sqrt(d2) #　一般に、CH結合の結合間距離はこんくらい[Å]
+                    x_h = x - vector[0]
+                    y_h = y - vector[1]
+                    z_h = z - vector[2]
+                    
+                    ##########
+                    # ここからどうしましょう
+                    ##########
+                    
+                    
+                    
+                    
 
             deleted_line = atom_lines[closest_idx]
             print(closest_dist2)
             print("削除する原子:", deleted_line.strip())
+            
             with open(f"{output_dir}/dump/deleted_atom/deleted_atom_{atom_type_to_delete}/deleted_atom{m}", "w") as f_delete:
                 f_delete.write(deleted_line.strip())
             
