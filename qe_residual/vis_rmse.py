@@ -1,0 +1,307 @@
+# =========================================================================================
+# Non-singular Green’s function (Kelvin solution) following:
+#   W. Cai et al., "A non-singular continuum theory of dislocations"
+#
+# Replace singular radius:
+#       r = |rx|
+# with non-singular form:
+#       r = sqrt(|rx|^2 + a^2)
+#
+# Then the displacement field is blended:
+#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
+#
+# where:
+#   a1 = 0.9038 * |b|
+#   a2 = 0.5451 * |b|
+#   m  = 0.6575
+# =========================================================================================
+
+import numpy as np #type: ignore
+import matplotlib.pyplot as plt #type: ignore 
+import os
+
+############ Get working directory path ############
+output_dir = os.environ.get("OUTPUT_PATH")
+if output_dir is None:
+    raise ValueError("環境変数 OUTPUT_PATH error")
+
+############ Get force dipole(residual stress) directory path ############
+dipole_r_path = os.environ.get("DIPOLE_R_PATH")
+if dipole_r_path is None:
+    raise ValueError("環境変数 DIPOLE_R_PATH error")
+
+######## 削除する原子の指定 ######## 
+atom_type_to_delete = int(os.environ.get("ATOM"))
+if atom_type_to_delete is None:
+    raise ValueError("環境変数 ATOM error")
+
+######## コア幅 ########  ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+a_core_width = float(os.environ.get("Burgers"))
+if a_core_width is None:
+    raise ValueError("環境変数 core error")
+
+############ Define material constant ################
+lattice_const = os.environ.get("LATTICE_CONST") # ang
+lattice_const = float(lattice_const) * 1.0e-10 # m
+
+############# Unit conversion constants ############
+conv_eV_to_J = 1.602176634E-19
+conv_bars_to_Pa = 1.0E+5
+conv_Vang_to_Vm = 1.0E-30
+conv_barVang_to_NVm = conv_bars_to_Pa * conv_Vang_to_Vm
+conv_J_to_eV = 1/conv_eV_to_J
+conv_ang_to_m = 1.0E-10
+
+############ Load input file count ############
+with open(f"{output_dir}/4hsic_q/filename.txt", 'r') as f_num:
+    lines = f_num.readlines()
+    file_num = len(lines)
+
+############ Load Force Dipole tensor (Displacement)(J) ############
+with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_J.inp", "r") as f_P:
+    lines = f_P.readlines()
+    cutoff_num = 4
+    P = {i: [] for i in range(cutoff_num)} 
+
+    for i in range(len(lines)):
+        values = np.array([float(v) for v in lines[i].split()])
+        mod = i % cutoff_num
+        P[mod].append(values)
+
+                
+############ Load Force Dipole tensor (residual_stress) [J] ############
+with open(f"{dipole_r_path}/force_dipole/force_dipole_{atom_type_to_delete}/force_dipole_J.txt", "r") as f_r:
+    lines = f_r.readlines()
+    P_r = []
+    for i in range(len(lines)):
+        values = np.array([float(v) for v in lines[i].split()])
+        P_r.append(values)
+    num_P_r = (len(P_r))
+
+    # if num_P_r != file_num:
+    #     raise ValueError("The number of force-dipole is different from residual and Displacement")
+
+############ Load The number of atoms ############
+with open(f"{output_dir}/N_atom_perfect.txt", "r") as f_atoms:
+    atom = f_atoms.readlines()
+    for i in range(len(atom)):
+        atoms = [float(line.strip()) for line in atom]
+
+
+
+
+############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+def kelvin_solution(g, v, rx, green, a_cai):
+    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_cai ** 2)
+    rx_norm = rx / r  
+    c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
+    d = np.eye(3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                green[i][j][k] = (-1) * c * (
+                    -1.0 * rx_norm[i] * d[j][k]
+                    - rx_norm[j] * d[k][i]
+                    + (3.0 - 4.0 * v) * rx_norm[k] * d[i][j]
+                    + 3.0 * rx_norm[i] * rx_norm[j] * rx_norm[k]
+                )
+    return green
+
+def main():
+    xc_list = []
+    
+    # --- Initialization ---
+    a = np.zeros((9, 9))
+    b = np.zeros(9)
+    iidx = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+    jidx = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+    atom_distance_list = []
+    mesh_atom_distance_list = []
+
+    ############ Generate RSME graph ############
+    # ====== Load MD displacement data ======
+    with open(f"{output_dir}/dump/displacement/displacement_{atom_type_to_delete}/displacement{3}.inp", "r") as f_disp:
+        lines = f_disp.readlines()
+        g = float((lines[0].split())[0])
+        v = float(lines[0].split()[1])
+        xc = np.array([float(lines[1].split()[i]) for i in range(3)])#xc: defect coordinate
+        xc_list.append(xc)
+        atom_number = int(lines[2].split()[0])
+        idx = 3
+        for _ in range(atom_number):
+                xi = np.array([float(lines[idx].split()[i]) for i in range(3)])
+                ui = np.array([float(lines[idx].split()[i + 3]) for i in range(3)])
+                idx = idx + 1
+                rx = xi - xc
+                atom_distance_list.append((xi,ui,rx))
+    sorted_atom_distance_list = sorted(atom_distance_list, key=lambda x: np.linalg.norm(x[2]))
+
+    # ====== Compute RMSE from Displacement ======
+    rmse_disp = {i: [] for i in range(cutoff_num)}
+    a_cai = {1: 0.9038 * a_core_width, 2: 0.5451 * a_core_width}
+    m_weight = 0.6575
+
+
+    for cutoff in range(cutoff_num):
+        for la in range(file_num):
+            sum = 0
+            for xi, ui, rx in sorted_atom_distance_list:      
+                abs_rx = np.linalg.norm(rx)
+                if abs_rx < 1e-15:  
+                    continue
+                
+                 # w^~の適用   --------------------------------------
+                green_1_d = np.zeros((3, 3, 3))
+                green_1_d = kelvin_solution(g, v, rx, green_1_d, a_cai[1])
+                ux_1_d=uy_1_d=uz_1_d=0.0
+                for j in range(9):
+                    ux_1_d -= green_1_d[0][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uy_1_d -= green_1_d[1][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uz_1_d -= green_1_d[2][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                ui_1 = np.array([ux_1_d, uy_1_d, uz_1_d])
+                
+                green_2_d = np.zeros((3, 3, 3))
+                green_2_d = kelvin_solution(g, v, rx, green_2_d, a_cai[2])
+                ux_2_d=uy_2_d=uz_2_d=0.0
+                for j in range(9):
+                    ux_2_d -= green_2_d[0][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uy_2_d -= green_2_d[1][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                    uz_2_d -= green_2_d[2][iidx[j]][jidx[j]]*P[cutoff][la][j]
+                ui_2 = np.array([ux_2_d, uy_2_d, uz_2_d])
+                ui_green = (1-m_weight) * ui_1 + m_weight * ui_2
+                
+                # -------------------------------------------------
+                
+                ui_sub = ui - ui_green
+                ui_sub = np.array(ui_sub) / lattice_const
+                sum = sum + np.dot(ui_sub, ui_sub)
+            rmse_disp[cutoff].append(np.sqrt(sum / atom_number))
+        
+    # ====== Compute RMSE from Residual Stress ======
+    rmse_residual = []
+    
+
+    for la in range(num_P_r):
+        sum = 0
+        for xi, ui, rx in sorted_atom_distance_list:
+            abs_rx = np.linalg.norm(rx)
+            if abs_rx < 1e-15:  
+                continue
+            
+            # w^~の適用   --------------------------------------
+            green_1_r = np.zeros((3, 3, 3))
+            green_1_r = kelvin_solution(g, v, rx, green_1_r, a_cai[1])
+            ux_1_r=uy_1_r=uz_1_r=0.0
+            for j in range(9):
+                ux_1_r -= green_1_r[0][iidx[j]][jidx[j]]*P_r[la][j]
+                uy_1_r -= green_1_r[1][iidx[j]][jidx[j]]*P_r[la][j]
+                uz_1_r -= green_1_r[2][iidx[j]][jidx[j]]*P_r[la][j]
+            ui_1 = np.array([ux_1_r, uy_1_r, uz_1_r])
+            
+            green_2_r = np.zeros((3, 3, 3))
+            green_2_r = kelvin_solution(g, v, rx, green_2_r, a_cai[2])
+            ux_2_r=uy_2_r=uz_2_r=0.0
+            for j in range(9):
+                ux_2_r -= green_2_r[0][iidx[j]][jidx[j]]*P_r[la][j]
+                uy_2_r -= green_2_r[1][iidx[j]][jidx[j]]*P_r[la][j]
+                uz_2_r -= green_2_r[2][iidx[j]][jidx[j]]*P_r[la][j]
+            ui_2 = np.array([ux_2_r, uy_2_r, uz_2_r])
+            ui_residual = (1-m_weight) * ui_1 + m_weight * ui_2
+            # -------------------------------------------------
+            
+            ui_sub = ui - ui_residual
+            ui_sub = np.array(ui_sub) / lattice_const
+            sum = sum + np.dot(ui_sub, ui_sub)
+        rmse_residual.append(np.sqrt(sum / atom_number))
+    
+
+
+
+    # ############# Plot RMSE residual ############
+    plt.figure()
+    plt.rcParams["mathtext.fontset"] = "stix"  # STIXフォントはTimes系
+    plt.rcParams["font.family"] = "STIXGeneral"
+    plt.plot(atoms, rmse_residual, marker = "h", label=r"$\it{Residual\ Stress\ }$", linewidth = 1.0, mfc = "#ff0000", color = "black", ls = "-", markersize = 7)
+    plt.xlabel(r"$\it{Number\, \, of\, \, atoms} \, \, [-]$")
+    plt.ylabel(r"$\it{RMSE} \, [-]$")
+    # plt.xlim([0.0, 5.5])
+    # plt.ylim(top = 0.0050)
+    #plt.title(f"$\\it{{Number\\ of\\ atoms}} = {number_atoms}$")
+    plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
+    plt.tight_layout()
+    plt.legend(
+    frameon=True,
+    facecolor='white',
+    framealpha=0.9,
+    fontsize=10,
+    loc='upper right',
+    labelspacing=0.2,     # ← 行間（デフォルト: 0.5）
+    handlelength=1.5,     # ← 線の長さ（デフォルト: 2.0）
+    handletextpad=0.3,    # ← 線と文字の間隔（デフォルト: 0.8）
+    borderaxespad=0.3,    # ← 軸との余白（デフォルト: 0.5）
+    borderpad=0.3,        # ← 凡例枠内の余白（デフォルト: 0.4）
+    )
+
+        # --- make dir & save png ---
+    save_dir = f"{output_dir}/rmse_residual_graph/rmse_residual_graph_{atom_type_to_delete}/core_width_{a_core_width}"
+    os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(f"{save_dir}/rsme_residual_disp.png", dpi=300)
+    plt.close()
+
+    # ############# Plot RMSE comparison: Kelvin(cut_off) vs residual ############
+    label_list = [r"$\it{Displacement}\,:\,\,r_{excl}/a = 0.0$", r"$\it{Displacement}\,:\,\,r_{excl}/a = 1.0$", r"$\it{Displacement}\,:\,\,r_{excl}/a = 1.5$", r"$\it{Displacement}\,:\,\,r_{excl}/a = 2.0$"]
+    marker_list = ["o", "^", "v", "s"]
+    color_list= plt.cm.Blues(np.linspace(0.2, 1.0, cutoff_num))
+    plt.figure()
+    plt.rcParams["mathtext.fontset"] = "stix"  # STIXフォントはTimes系
+    plt.rcParams["font.family"] = "STIXGeneral"
+    for la in range(cutoff_num):
+        plt.plot(atoms[2:], rmse_disp[la][2:], marker_list[la], label = label_list[la], linewidth = 1.0, color = "black",  markersize = 7,  mfc=color_list[la], ls = "-")
+    plt.plot(atoms, rmse_residual, marker = "h", label=r"$\it{Residual\ Stress\ }$", linewidth = 1.0, mfc = "#ff0000", color = "black", ls = "-", markersize = 7)
+    plt.xlabel("Number of atoms in the supercell [-]")
+    plt.ylabel("Root mean square error (RMSE) [-]")
+    plt.title("RMSE Comparison: Displacement Method (cutoff) vs Residual-Stress Method")
+
+    # plt.xlim([0.0, 5.5])
+    # plt.ylim(top = 0.0050)
+    #plt.title(f"$\\it{{Number\\ of\\ atoms}} = {number_atoms}$")
+    plt.grid(True, color='gray', linestyle='--', linewidth=0.5)
+    plt.tight_layout()
+    plt.legend(
+    frameon=True,
+    facecolor='white',
+    framealpha=0.9,
+    fontsize=10,
+    loc='upper right',
+    labelspacing=0.2,     # ← 行間（デフォルト: 0.5）
+    handlelength=1.5,     # ← 線の長さ（デフォルト: 2.0）
+    handletextpad=0.3,    # ← 線と文字の間隔（デフォルト: 0.8）
+    borderaxespad=0.3,    # ← 軸との余白（デフォルト: 0.5）
+    borderpad=0.3,        # ← 凡例枠内の余白（デフォルト: 0.4）
+    )
+
+        # --- make dir & save png ---
+    save_dir = f"{output_dir}/rmse_graph/rmse_graph_{atom_type_to_delete}/core_with_{a_core_width}"
+    os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(f"{save_dir}/rsme_disp.png", dpi=300)
+    plt.close()
+       
+            
+
+        
+
+if __name__ == "__main__":
+     main()
+
+
+        
+             
+
+             
+
+             
+
+
+             
+
+            

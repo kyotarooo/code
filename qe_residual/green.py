@@ -1,0 +1,160 @@
+# =========================================================================================
+# Non-singular Green’s function (Kelvin solution) following:
+#   W. Cai et al., "A non-singular continuum theory of dislocations"
+#
+# Replace singular radius:
+#       r = |rx|
+# with non-singular form:
+#       r = sqrt(|rx|^2 + a^2)
+#
+# Then the displacement field is blended:
+#       w̃(rx) = (1 - m) w(rx; a1) + m w(rx; a2)
+#
+# where:
+#   a1 = 0.9038 * |b|
+#   a2 = 0.5451 * |b|
+#   m  = 0.6575
+# =========================================================================================
+
+import numpy as np # type: ignore
+import sys
+from tqdm import tqdm#type: ignore
+import os
+
+######## 環境変数の取得 ########
+output_dir = os.environ.get("OUTPUT_PATH")
+if output_dir is None:
+    raise ValueError("環境変数 OUTPUT_PATH error")
+
+######## 材料定数の取得 ############
+lattice_const = os.environ.get("LATTICE_CONST") # ang
+lattice_const = float(lattice_const)
+
+######## 削除する原子の指定 ########  
+atom_type_to_delete = int(os.environ.get("ATOM"))
+if atom_type_to_delete is None:
+    raise ValueError("環境変数 ATOM error")
+
+
+######### 単位変換係数 ########
+conv_eV_to_J = 1.602176634E-19
+conv_bars_to_Pa = 1.0E+5
+conv_Vang_to_Vm = 1.0E-30
+conv_barVang_to_NVm = conv_bars_to_Pa * conv_Vang_to_Vm
+conv_J_to_eV = 1/conv_eV_to_J
+conv_ang_to_m = 1.0E-10
+
+######## コア幅 ########  ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+a_core_width = float(os.environ.get("Burgers"))
+if a_core_width is None:
+    raise ValueError("環境変数 core error")
+
+######## ファイル数の読み込み ########
+with open(f"{output_dir}/4hsic_q/filename.txt", 'r') as f_num:
+    lines = f_num.readlines()
+    file_num = len(lines)
+    print(f"{file_num}")
+
+############ Kelvin Solition (wei cai) ############ ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+def kelvin_solution(g, v, rx, green, a_cai):
+    r = np.sqrt(np.linalg.norm(rx) ** 2 + a_cai ** 2)
+    rx_norm = rx / r  # ← コピーを作る
+    c = 1.0 / (16.0 * np.pi * g * (1.0 - v) * r * r)
+    d = np.eye(3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                green[i][j][k] = (-1) * c * (
+                    -1.0 * rx_norm[i] * d[j][k]
+                    - rx_norm[j] * d[k][i]
+                    + (3.0 - 4.0 * v) * rx_norm[k] * d[i][j]
+                    + 3.0 * rx_norm[i] * rx_norm[j] * rx_norm[k]
+                )
+    return green
+
+
+# --- make dir & save png ---
+save_dir = f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}"
+os.makedirs(save_dir, exist_ok=True)
+
+def main():
+    x_list = []
+    limit_range = np.array([0, 1, 1.5, 2]) * conv_ang_to_m
+    for l in range(file_num):
+        for m in limit_range:
+            r_range_limit = lattice_const * m
+            a = np.zeros((9, 9))
+            b = np.zeros(9)
+            iidx = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+            jidx = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+            atom_distance_list = []
+            a_cai = {1: 0.9038 * a_core_width, 2: 0.5451 * a_core_width}
+            m_weight = 0.6575
+
+            with open(f"{output_dir}/dump/displacement/displacement_{atom_type_to_delete}/displacement{l}.inp", "r") as f_disp: 
+                lines = f_disp.readlines()
+                g = float((lines[0].split())[0])
+                v = float(lines[0].split()[1])
+                xc = np.array([float(lines[1].split()[i]) for i in range(3)])#xcは欠陥の座標
+                n = int(lines[2].split()[0])
+                idx = 3
+
+                for _ in range(n):
+                    xi = np.array([float(lines[idx].split()[i]) for i in range(3)])
+                    ui = np.array([float(lines[idx].split()[i + 3]) for i in range(3)])
+                    idx = idx + 1
+                    rx = xi - xc
+                    atom_distance_list.append((xi,ui,rx))
+                
+            counter = 0
+            sorted_atom_distance_list = sorted(atom_distance_list, key=lambda x: np.linalg.norm(x[2]))
+            for xi,ui,rx in tqdm(sorted_atom_distance_list):
+                if np.linalg.norm(rx)>r_range_limit:
+                    counter += 1
+                    green1 = np.zeros((3, 3, 3))
+                    green1 = kelvin_solution(g, v, rx, green1, a_cai[1])
+                    green2 = np.zeros((3, 3, 3))
+                    green2 = kelvin_solution(g, v, rx, green2, a_cai[2])
+
+                    for i in range(9):
+                        for j in range(9):
+                            for k in range(3):
+                                a[i][j] += (
+                                    ((1-m_weight) * green1[k][iidx[i]][jidx[i]] + m_weight * green2[k][iidx[i]][jidx[i]]) * ((1-m_weight) * green1[k][iidx[j]][jidx[j]] + m_weight * green2[k][iidx[j]][jidx[j]] )
+                                )
+
+                    for i in range(9):
+                        for j in range(3):
+                            b[i] -= (1-m_weight) * ui[j] * green1[j][iidx[i]][jidx[i]] + m_weight * ui[j] * green2[j][iidx[i]][jidx[i]]
+
+                else:
+                    continue
+
+            try:       
+                a_inv = np.linalg.inv(a)#正方行列aの逆行列inverse
+                x = np.dot(a_inv, b)#行列積の計算
+                x_list.append(x)
+            except np.linalg.LinAlgError:
+                print(f"[Warning] matrix 'a' is singular at file index [{l}][{m}], skip this case.")
+                x_dammy = np.full(9, np.nan)
+                x_list.append(x_dammy)
+                continue 
+            
+    with open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_J.inp", "w") as f_J,\
+         open(f"{output_dir}/force_dipole/force_dipole_{atom_type_to_delete}/a_{a_core_width}/data_p_eV.inp", "w") as f_eV:
+    
+        for l in range(file_num*len(limit_range)):
+            for i in range(9):
+                f_J.write(f"{x_list[l][i]:.12e} ")
+            f_J.write("\n")
+
+            for i in range(9):
+                f_eV.write(f"{x_list[l][i] * conv_J_to_eV:.12e} ")
+            f_eV.write("\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+

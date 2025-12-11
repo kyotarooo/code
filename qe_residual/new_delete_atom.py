@@ -109,7 +109,7 @@ with open(f"{output_dir}/4hsic_vacancy/atom_type_delete_{atom_type_to_delete}/fi
                     break
                 atom_lines.append(line)
 
-            # 指定した座標に最も近い原子を探す
+            # 指定した座標の(最も近い)原子を探す
             closest_idx = None
             closest_dist2 = 1000000
 
