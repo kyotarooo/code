@@ -1,8 +1,8 @@
 &CONTROL
   calculation = 'vc-relax',
   prefix = 'sic_bulk',
-  outdir = './tmp/',
-  pseudo_dir = './pseudo/',
+  outdir = './',
+  pseudo_dir = '/Users/kyou/q-e/pseudo/',
   tstress = .true.,
   tprnfor = .true.,
   disk_io = 'low',
