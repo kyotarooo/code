@@ -110,59 +110,14 @@ read
 
 python3 "$code_dir/sic.py"
 
-######## delete atom ########
+######## make Vsi-4H ########
 
 echo "-------------------------------------------------"
-echo "delete 1 atom"
+echo "make Vsi-4H"
 echo "-------------------------------------------------"
 echo "Press [Enter]"
 read
 
-python3 "$code_dir/new_delete_atom.py"
-
-######## run rammps script ########
-# lmpファイル
-LAMMPS=/Users/kyou/Library/CloudStorage/Box-Box/lammps-29Oct20/src/lmp_mpi
-
-# lammps script file
-lammps_script=minimize.lammps
-echo "-------------------------------------------------"
-echo "run lammps script"
-echo "minimize.pyとnew_delete_atom.pyの削除する原子があっているか確認!!!!!"
-echo "-------------------------------------------------"
-echo "Press [Enter]"
-read
-
-mpirun -np 8 "$LAMMPS" -var output_dir $OUTPUT_PATH -in "$code_dir/$lammps_script" 
+python3 "$code_dir/vsi4hgen.py"
 
 
-######## read data ########
-echo "-------------------------------------------------"
-echo "read data"
-echo "-------------------------------------------------"
-echo "Press [Enter]"
-read
-python3 "$code_dir/readdata.py"
-
-######## green function ########
-echo "-------------------------------------------------"
-echo "calculate green function"
-echo "-------------------------------------------------"
-echo "Press [Enter]"
-read
-python3 "$code_dir/green.py"
-
-######## visualization ########
-echo "-------------------------------------------------"
-echo "plot (vis_disp2.py)"
-echo "-------------------------------------------------"
-echo "Press [Enter]"
-read
-python3 "$code_dir/vis_disp.py"
-
-echo "-------------------------------------------------"
-echo "plot (vis_rmse.py)"
-echo "-------------------------------------------------"
-echo "Press [Enter]"
-read
-python3 "$code_dir/vis_rmse.py"

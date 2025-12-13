@@ -40,8 +40,8 @@ def write_vcrelax_input(filename, box, atoms):
         f.write("&CONTROL\n")
         f.write("  calculation = 'vc-relax',\n")  # セルサイズも最適化
         f.write("  prefix = 'sic_bulk',\n")
-        f.write("  outdir = './tmp/',\n")
-        f.write("  pseudo_dir = './pseudo/',\n")
+        f.write("  outdir = './out/',\n")
+        f.write("  pseudo_dir = '/Users/kyou/q-e/pseudo/',\n")
         f.write("  tstress = .true.,\n")
         f.write("  tprnfor = .true.,\n")
         f.write("  disk_io = 'low',\n")

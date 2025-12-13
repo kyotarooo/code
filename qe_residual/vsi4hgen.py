@@ -28,29 +28,29 @@ if atom_type_to_delete is None:
 C_H_BOND_LENGTH = 1.09  # C-H 結合長 [A]
 target_element_type = 1
 
-# SiC格子定数など
-a1 = 3.07659964
-a2 = 5.32882689
-a3 = 2.51203309 * 4
+# SiC格子定数 (qeで最小原子数で格子定数を求めたものを採用)
+a1 = 3.093600904
+a2 = 5.356555526
+a3 = 10.124684058
 
-####### 単位胞のデータ(4H-SiC) ########
-base_atoms = [                                   #(六方晶site or 立方晶site) : target atom
-    [1, 0.000000, 0.000000, 0.000000], #(k):0 ← Si
-    [1, 1.538300, 2.664413, 0.000000], #(k):1
-    [1, 0.000000, 1.776276, 2.512033], #(h):2
-    [1, 1.538300, 4.440689, 2.512033], #(h):3
-    [1, 0.000000, 0.000000, 5.024066], #(k):4
-    [1, 1.538300, 2.664413, 5.024066], #(k):5
-    [1, 0.000000, 3.552551, 7.536099], #(h):6
-    [1, 1.538300, 0.888138, 7.536099], #(h):7
-    [2, 0.000000, 1.776276, 0.628008], #(k):8　← C
-    [2, 1.538300, 4.440689, 0.628008], #(k):9
-    [2, 0.000000, 0.000000, 3.140041], #(h):10
-    [2, 1.538300, 2.664413, 3.140041], #(h):11
-    [2, 0.000000, 3.552551, 5.652074], #(k):12
-    [2, 1.538300, 0.888138, 5.652074], #(k):13
-    [2, 0.000000, 0.000000, 8.164108], #(h):14
-    [2, 1.538300, 2.664413, 8.164108], #(h):15
+####### 単位胞のデータ(4H-SiC)(qeで最小原子数で緩和後) ########
+base_atoms = [                                  #(六方晶site or 立方晶site) : target atom
+    [1, 0.0000000000, -0.0000994450, 0.0015372068], # (k):0  Si
+    [1, 1.5468004521,  2.6781782946, 0.0015371710], # (k):1  Si
+    [1, 0.0000000000,  1.7856874137, 2.5321748613], # (h):2  Si
+    [1, 1.5468004521,  4.4639651533, 2.5321748506], # (h):3  Si
+    [1, 0.0000000000,  0.0000992163, 5.0638790676], # (k):4  Si
+    [1, 1.5468004521,  2.6783769557, 5.0638790359], # (k):5  Si
+    [1, 0.0000000000,  3.5708678565, 7.5945169444], # (h):6  Si
+    [1, 1.5468004521,  0.8925900885, 7.5945170057], # (h):7  Si
+    [2, 0.0000000000,  1.7857354326, 0.6282891090], # (k):8  C
+    [2, 1.5468004521,  4.4640131655, 0.6282890842], # (k):9  C
+    [2, 0.0000000000, -0.0000857488, 3.1659263841], # (h):10 C
+    [2, 1.5468004521,  2.6781919900, 3.1659263928], # (h):11 C
+    [2, 0.0000000000,  3.5708198446, 5.6906310383], # (k):12 C
+    [2, 1.5468004521,  0.8925420940, 5.6906311183], # (k):13 C
+    [2, 0.0000000000,  0.0000854903, 8.2282685407], # (h):14 C
+    [2, 1.5468004521,  2.6783632474, 8.2282685188], # (h):15 C
 ]
 #1: Si
 #2: C
@@ -106,9 +106,9 @@ def read_lammps_data(filepath):
     return box, atoms
 
 ######## Quantum Espresso入力ファイルを作成 ########
-def write_qe_input(filename, box, atoms, calculation='relax'):
+def write_qe_input(filename, box, atoms, id_str, calculation='relax'):
     
-    # 擬ポテンシャルファイル名（環境に合わせて変更してください）
+    # 擬ポテンシャルファイル名
     pseudo_si = "Si.pbe-n-kjpaw_psl.1.0.0.UPF"
     pseudo_c = "C.pbe-n-kjpaw_psl.1.0.0.UPF"
     pseudo_h = "H.pbe-kjpaw_psl.1.0.0.UPF"
@@ -117,7 +117,7 @@ def write_qe_input(filename, box, atoms, calculation='relax'):
         # --- CONTROL ---
         f.write("&CONTROL\n")
         f.write(f"  calculation = '{calculation}',\n") # 構造緩和
-        f.write("  prefix = 'sic_vsi4h',\n")
+        f.write(f"  prefix = 'sic_vsi4h_{id_str}',\n")
         f.write("  outdir = './tmp/',\n")
         f.write("  pseudo_dir = './pseudo/',\n")
         f.write("  tstress = .true.,\n")  # 重要: 残留応力法のため応力を計算
@@ -169,7 +169,7 @@ def write_qe_input(filename, box, atoms, calculation='relax'):
 if __name__ == "__main__":
     b_atom = base_atoms[atom_type_to_delete] 
     
-    for m in range(8):
+    for m in range(7):
         n = get_supercell_size(m)
         if n is None: continue
         
@@ -202,6 +202,16 @@ if __name__ == "__main__":
             dx = atom['x'] - xc
             dy = atom['y'] - yc
             dz = atom['z'] - zc
+            
+            if dx > box['x'] / 2: dx -= box['x']
+            elif dx < -box['x'] / 2: dx += box['x']
+            
+            if dy > box['y'] / 2: dy -= box['y']
+            elif dy < -box['y'] / 2: dy += box['y']
+            
+            if dz > box['z'] / 2: dz -= box['z']
+            elif dz < -box['z'] / 2: dz += box['z']
+            
             d2 = dx**2 + dy**2 + dz**2
             
             if d2 < min_dist2:
@@ -257,5 +267,5 @@ if __name__ == "__main__":
         
         # 3. QE入力ファイルの出力
         output_filename = f"{output_dir}/qe_vsi4h_{m}.in"
-        write_qe_input(output_filename, box, new_atoms)
+        write_qe_input(output_filename, box, new_atoms, id_str=str(m))
         print(f"    Generated: {output_filename}")
