@@ -118,8 +118,9 @@ def write_qe_input(filename, box, atoms, id_str, calculation='relax'):
         f.write("&CONTROL\n")
         f.write(f"  calculation = '{calculation}',\n") # 構造緩和
         f.write(f"  prefix = 'sic_vsi4h_{id_str}',\n")
-        f.write("  outdir = './tmp/',\n")
-        f.write("  pseudo_dir = './pseudo/',\n")
+        f.write("  outdir = './out/',\n")
+        #f.write("  pseudo_dir = '/Users/kyou/q-e/pseudo/',\n")
+        f.write("  pseudo_dir = '/home/kyou/q-e/pseudo/',\n")
         f.write("  tstress = .true.,\n")  # 重要: 残留応力法のため応力を計算
         f.write("  tprnfor = .true.,\n")
         f.write("/\n")
@@ -128,8 +129,10 @@ def write_qe_input(filename, box, atoms, id_str, calculation='relax'):
         f.write("&SYSTEM\n")
         f.write("  ibrav = 0,\n") # 格子ベクトルを明示的に指定
         f.write(f"  nat = {len(atoms)}, ntyp = 3,\n") # Si, C, H
-        f.write("  ecutwfc = 50.0, ecutrho = 300.0,\n")
+        f.write("  ecutwfc = 40.0, ecutrho = 320.0,\n")
         f.write("  occupations = 'smearing', smearing = 'gaussian', degauss = 0.01,\n")
+        f.write("  nosym = .true.,\n")
+        f.write("  noinv = .true.,\n")
         f.write("/\n")
         
         # --- ELECTRONS ---
@@ -169,7 +172,7 @@ def write_qe_input(filename, box, atoms, id_str, calculation='relax'):
 if __name__ == "__main__":
     b_atom = base_atoms[atom_type_to_delete] 
     
-    for m in range(7):
+    for m in range(6):
         n = get_supercell_size(m)
         if n is None: continue
         
@@ -202,16 +205,6 @@ if __name__ == "__main__":
             dx = atom['x'] - xc
             dy = atom['y'] - yc
             dz = atom['z'] - zc
-            
-            if dx > box['x'] / 2: dx -= box['x']
-            elif dx < -box['x'] / 2: dx += box['x']
-            
-            if dy > box['y'] / 2: dy -= box['y']
-            elif dy < -box['y'] / 2: dy += box['y']
-            
-            if dz > box['z'] / 2: dz -= box['z']
-            elif dz < -box['z'] / 2: dz += box['z']
-            
             d2 = dx**2 + dy**2 + dz**2
             
             if d2 < min_dist2:
@@ -244,6 +237,15 @@ if __name__ == "__main__":
                 dx = atom['x'] - v_x
                 dy = atom['y'] - v_y
                 dz = atom['z'] - v_z
+                
+                if dx > box['x'] / 2: dx -= box['x']
+                elif dx < -box['x'] / 2: dx += box['x']
+                
+                if dy > box['y'] / 2: dy -= box['y']
+                elif dy < -box['y'] / 2: dy += box['y']
+                
+                if dz > box['z'] / 2: dz -= box['z']
+                elif dz < -box['z'] / 2: dz += box['z']
                 d2 = dx**2 + dy**2 + dz**2
                 
                 # 第一近接距離にあるか判定 (許容誤差 0.1程度)
@@ -264,6 +266,9 @@ if __name__ == "__main__":
                     h_count += 1
         
         print(f"    Added {h_count} H atoms.")
+        print(f" total atoms {len(new_atoms)}")
+        with open("./total_atoms", "a") as f:
+            f.write(f"total atoms {len(new_atoms)}\n")
         
         # 3. QE入力ファイルの出力
         output_filename = f"{output_dir}/qe_vsi4h_{m}.in"
