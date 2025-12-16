@@ -120,8 +120,23 @@ int main(int argc, char** argv) {
   // Rearrange dislocation elements
   DD_RearrangeDislocations(&dd);
 
+  // 1. ループの前にログファイルを開く
+  FILE *fp_debug = fopen("debug.log", "w");
+  if (fp_debug == NULL) {
+      fprintf(stderr, "Cannot open debug.log\n");
+      return 1;
+  }
+  fprintf(fp_debug, "Step, Time, dt\n"); // ヘッダー
+
+  // 2. メインループ (for文はこれ1つだけ！)
   // Dislocation dynamics
   for (; iStep < dd.step.n; iStep++) {
+
+    // ログファイルへの書き込み (毎ステップ)
+    fprintf(fp_debug, "%d, %e, %e\n", iStep, dd.step.t, dd.step.dt);
+    fflush(fp_debug); // 強制書き込み
+
+    // 標準ログ出力 (intervalごと)
     if (iStep % LOG_INTERVAL == 0) {
       DD_WriteLog(iStep, &dd);
     }
@@ -134,16 +149,15 @@ int main(int argc, char** argv) {
       DD_FEM_CorrectionField(&dd, &fem);
     }
 
-    // Update dislocation positions
+    // Update dislocation positions (時間積分)
     time_integral(&dd, &fem);
 
     // Strain rate test, check direct interactions, and rearrange dislocation
-    // discretization
     DD_FEM_MechanicalBehavior(&dd, &fem);
     DD_DirectInteractions(&dd);
     DD_RearrangeDislocations(&dd);
 
-    // Write dislocations and mechanical behavior
+    // Write dislocations and mechanical behavior (結果出力)
     if (iStep % dd.output.interval == 0) {
       DD_WriteTime(&dd, argv[1]);
       DD_WriteDislocations(&dd, argv[1]);
@@ -156,6 +170,10 @@ int main(int argc, char** argv) {
     // Terminate simulation, if prescribed condition is satisfied
     DD_TerminateSimulation(&dd);
   }
+
+  // 3. ループが終わったらファイルを閉じる
+  fclose(fp_debug);
+  // --- 【ここまで修正】 ---
 
 #ifndef _NO_FEM_
 #ifndef _PARDISO_
