@@ -172,7 +172,7 @@ def write_qe_input(filename, box, atoms, id_str, calculation='relax'):
 if __name__ == "__main__":
     b_atom = base_atoms[atom_type_to_delete] 
     
-    for m in range(6):
+    for m in range(2):
         n = get_supercell_size(m)
         if n is None: continue
         

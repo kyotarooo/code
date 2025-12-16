@@ -42,5 +42,6 @@ grid_stress.inp
 
 sic_bulk.*
 *.out
+*.o
 
 
