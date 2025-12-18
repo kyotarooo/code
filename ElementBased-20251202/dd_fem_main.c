@@ -77,6 +77,7 @@ int main(int argc, char** argv) {
   // Read input data
   DD_ReadInput(&dd, argv[1]);
   FEM_ReadInput(&fem, argv[1]);
+  char *output_dir = "out";
 
   // Open log files
   DD_OpenLogFiles(&dd, argv[1]);
@@ -120,15 +121,17 @@ int main(int argc, char** argv) {
   // Rearrange dislocation elements
   DD_RearrangeDislocations(&dd);
 
-  // 1. ループの前にログファイルを開く
-  FILE *fp_debug = fopen("debug.log", "w");
+  char debug_log_path[256];
+  sprintf(debug_log_path, "%s/debug.log", output_dir);
+  
+  FILE *fp_debug = fopen(debug_log_path, "w");
   if (fp_debug == NULL) {
-      fprintf(stderr, "Cannot open debug.log\n");
+      fprintf(stderr, "Cannot open %s\n", debug_log_path);
       return 1;
   }
-  fprintf(fp_debug, "Step, Time, dt\n"); // ヘッダー
+  fprintf(fp_debug, "Step, Time, dt\n");
 
-  // 2. メインループ (for文はこれ1つだけ！)
+  
   // Dislocation dynamics
   for (; iStep < dd.step.n; iStep++) {
 
@@ -159,10 +162,10 @@ int main(int argc, char** argv) {
 
     // Write dislocations and mechanical behavior (結果出力)
     if (iStep % dd.output.interval == 0) {
-      DD_WriteTime(&dd, argv[1]);
-      DD_WriteDislocations(&dd, argv[1]);
-      DD_WriteMechanicalBehavior(&dd, argv[1]);
-      DD_FEM_WriteDislocationDensity(&dd, &fem, argv[1]);
+      DD_WriteTime(&dd, output_dir);
+      DD_WriteDislocations(&dd, output_dir);
+      DD_WriteMechanicalBehavior(&dd, output_dir);
+      DD_FEM_WriteDislocationDensity(&dd, &fem, output_dir);
       // DD_PlotDislocations(&dd);
       dd.output.id += 1;
     }
