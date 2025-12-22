@@ -44,7 +44,6 @@ mkdir -p "$full_output_dir/log_file"
 # supercell 
 rm -f $full_output_dir/supercell.txt
 
-
 ########## ディレクトリ作成・削除 ##########
 
 # force dipole file
