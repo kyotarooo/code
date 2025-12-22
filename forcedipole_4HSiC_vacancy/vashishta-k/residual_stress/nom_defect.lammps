@@ -89,6 +89,13 @@ min_style cg
 minimize 1.0e-16 0 200000 100000000
 run 1
 
+#完全結晶の応力をチェック
+compute st_perf all stress/atom NULL
+dump dump_stress_p all custom 1 ${output_dir}/dump/perfect_lattice/perfect_lattice_${atom_type_to_delete}/stress_viz_perfect_${n}.dump id type x y z c_st_perf[1] c_st_perf[2] c_st_perf[3] c_st_perf[4] c_st_perf[5] c_st_perf[6]
+run 0
+undump dump_stress_p
+uncompute st_perf
+
 # 応力の計算
 compute de_peratom all stress/atom NULL
 compute de_sumstress${n} all reduce sum c_de_peratom[1] c_de_peratom[2] c_de_peratom[3] c_de_peratom[4] c_de_peratom[5] c_de_peratom[6]
