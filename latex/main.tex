@@ -1,0 +1,235 @@
+\documentclass[uplatex, dvipdfmx, 12pt]{jsreport}
+
+% --- パッケージ ---
+\usepackage{amsmath, amssymb}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{otf}  % ←【これを追加してください！】
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{indentfirst}  % 冒頭段落の字下げ
+\usepackage{times}        % Serif系フォント指定
+\usepackage{booktabs}  % プリアンブルで追加
+\usepackage{siunitx} % SI単位系パッケージ
+\usepackage{tocloft}  % ← パッケージ追加
+\usepackage{subcaption} % 並列図のパッケージ
+\usepackage {mathcomp} %数学モード，数学記号パッケージ
+\usepackage{threeparttable}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage[version=4]{mhchem}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{array}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\usepackage[super,square,sort&compress]{natbib}
+\usepackage[
+  top=20mm,
+  bottom=15mm,
+  left=25mm,
+  right=10mm,
+  includehead,
+  includefoot
+]{geometry}
+
+
+
+% --- 章番号「第◯章」の目次表示とドットリーダー設定 ---
+\setlength{\cftchapnumwidth}{4em}  % 章番号の幅
+\renewcommand{\cftchapdotsep}{\cftdotsep}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+% chapterにもドットリーダーを入れる
+\renewcommand{\cftchapdotsep}{\cftdotsep}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+% --- 番号の形式変更 
+
+
+
+% --- キャプション調整 ---
+\captionsetup[figure]{
+    labelsep=period, 
+    name=Fig., 
+    font={small},  % ← small ≒ 9.5pt 
+    labelfont=bf, 
+    justification=raggedright
+}
+\captionsetup[table]{
+    labelsep=period, 
+    name=Table, 
+    font={small},  % ← small ≒ 9.5pt
+    labelfont=bf, 
+    justification=raggedright, 
+    position=top
+}
+
+% --- ページ設定 ---
+\pagestyle{fancy}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[R]{\thepage}
+}
+\fancyhf{}  % ヘッダー・フッター初期化
+\fancyhead[R]{\thepage}  % ページ番号を右上に表示
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{14.5pt}     % ヘッダー高さの警告を防ぐ
+
+% --- タイトル形式 ---
+% 第○章のスタイル定義（日本語対応）
+\newcommand{\translatechaptername}[1]{第#1章}
+\titleformat{\chapter}[block]{\normalfont\bfseries\centering\fontsize{12pt}{15pt}\selectfont}
+{\translatechaptername{\thechapter}}{1em}{} 
+
+% 節・小節の見出しサイズを10ptに統一
+\titleformat{\section}[hang]{\normalfont\bfseries\fontsize{12pt}{15pt}\selectfont}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}[hang]{\normalfont\bfseries\fontsize{12pt}{15pt}\selectfont}
+{\thesubsection}{1em}{}
+\titlespacing*{\chapter}{0pt}{-10pt}{20pt}
+
+\begin{document}
+
+% 目次と参考文献のタイトルを日本語に変更
+\renewcommand{\contentsname}{目次}
+\renewcommand{\bibname}{参考文献}
+
+% --- 表紙（手動で作成） ---
+\begin{titlepage}
+  \thispagestyle{empty}
+
+  \centering
+  \vspace*{40mm}
+
+  {\large 2025 年度卒業論文 \par}
+  \vspace{15mm}
+
+  {\LARGE グリースのちょう度および降伏応力の温度依存性に関する研究 \par}
+  \vspace{60mm}
+
+  {\large 2026 年 2 月 \par}
+  \vspace{15mm}
+
+  {\large 東京理科大学 創域理工学部 機械航空宇宙工学科 \par}
+  \vspace{10mm}
+
+  {\large 機素潤滑研究室 \par}
+  \vspace{20mm}
+
+  {\large 学籍番号 7522022 \quad 枝　七旺 \par}
+
+  \thispagestyle{empty}
+\end{titlepage}
+
+% --- 目次 ---
+\clearpage
+\pagenumbering{roman}  % 小文字ローマ数字で目次にページ番号を振る
+\renewcommand{\contentsname}{}
+\vspace*{-10pt}  % 目次との間隔調整（必要に応じて）
+\begin{center}
+  {\fontsize{12pt}{15pt}\selectfont\bfseries 目次}
+\end{center}
+\vspace*{-9em}  % 目次との間隔調整（必要に応じて）
+\tableofcontents
+\thispagestyle{empty}  % 目次ページも番号非表示にする（必要に応じて）
+
+% --- 本文開始（1ページ目） ---
+\clearpage
+\pagenumbering{arabic}  % ページ番号をアラビア数字にリセット
+\setcounter{page}{1}    % 第1章をページ1から開始
+\pagestyle{fancy}       % fancyhdr再適用（右上にページ番号）
+
+% --- 本文 ---
+\input{chapter1.tex}
+\input{chapter2.tex}
+\input{chapter3.tex}
+\input{chapter4.tex}
+\input{chapter5.tex}
+\input{chapter6.tex}
+
+% --- 文献の前に謝辞を追加 ---
+\clearpage        % 片面印刷なら \clearpage
+\phantomsection         % hyperref 対策（PDFしおりの飛び先）
+\chapter*{謝辞}
+\addcontentsline{toc}{chapter}{謝辞}
+
+本研究にあたり多大なご指導を賜りました野口教授に深く感謝申し上げます.
+また,日頃よりご助言いただいた研究室の皆様にも厚く御礼申し上げます.
+
+% --- 文献 ---
+\clearpage
+\renewcommand{\bibname}{参考文献}
+\addcontentsline{toc}{chapter}{参考文献} 
+{\small  % ← ここでサイズを指定（small ≒ 9.5pt）
+\bibliographystyle{jisplain}  % または plain
+\begin{thebibliography}{1}
+%%%%ここから参考文献入力
+\bibitem{reynolds方程式} Osborne Reynolds, "IV. On the theory of lubrication and its application to Mr. Beauchamp tower's experiments, including an experimental determination of the viscosity of olive oil." , (1886).
+
+\bibitem{滑り}Goldstein, "Modern developments in fluid dynamics" , Dover Publications, Vol.2 (1965), p.676.   
+
+\bibitem{曲率}Elrod, Harold G., Jr., "A derivation of the basic equations for hydrodynamic lubrication with a fluid having constant properties" ,  Quart. Appl. Math. 17 (1960), pp.349-359.
+
+\bibitem{密度}D. Dowson, "A generalized Reynolds equation for fluid-film lubrication" , International Journal of Mechanical Sciences, Vol.4 (1962), pp.159-170.
+
+\bibitem{弾性流体潤滑理論}Dowson, D. and Higginson, G. R., "Elastohydrodynamic Lubrication" , Pergamon, (1966).
+
+\bibitem{弾性潤滑}D. Dowson, G. R. Higginson, "A Numerical Solution to the Elasto-Hydrodynamic Problem", Journal of Mechanical Engineering Science, (1959).
+
+\bibitem{潤滑剤原理教科書１}山本雄二，兼田楨宏，"トライボロジー（第２版）"，第２版第１刷，理工学社(2010)，pp.215-227.
+
+\bibitem{潤滑剤原理教科書２}村木正芳，"図解トライボロジー　摩擦の科学と潤滑技術"，初版第１刷，日刊工業新聞社(2007)，pp.125-145.
+
+\bibitem{流力教科書}一般社団法人日本機械学会，"JSMEテキストシリーズ流体力学"，初版第15刷，丸善出版(2022)，pp.3-7.
+
+\bibitem{せん断薄化}D. Lootens, P. Hebraud, E. Lecolier and H. Van Damme, Gelation, "shear-thinning
+and shear-thickening in cement slurries.", Oil Gas Sci Technol. 59:1 (2004), pp.31-40.
+
+\bibitem{せん断肥厚}H. A. Barnes, "Shear-thickening (dilatancy) in suspensions of nonaggregating solid particles dispersed in Newtonian liquids.", J Rheol. 33:2 (1989), pp.329-366.
+
+\bibitem{ISO粘度分類}International Organization for Standardization, "ISO 3448 lndustrial liquid lubricants- ISO viscosity classification", second edittion, 1992.
+
+\bibitem{ASTM粘度一般式}ASTM International, ASTM D341, “Standard Practice for Viscosity-Temperature Charts for Liquid Petroleum Products”, 1993.
+
+\bibitem{粘度指数}日本産業規格，"JIS K 2283 原油及び石油製品－動粘度試験方法及び粘度指数算出方法"，2000.
+
+\bibitem{barus}Barus, C., “Isotherms, isopiestics and isometrics relative to viscosity”, American Journal of Science, Vol. 45, pp. 87–96, 1893.
+
+\bibitem{barusの限界}Yasutomi, S.，Bair, S.，and Winer, W.O.，“Modeling the Pressure and Temperature Dependence of Viscosity and Volume for Hydraulic Fluids，”
+ASME Journal of Tribology，Vol．106，No．2（1984），pp．303–313．
+
+\bibitem{roelands}Roelands，C.J.A．，Correlational Aspects of the Viscosity–Temperature–Pressure Relationship of Lubricating Oils，Ph.D．Thesis，Delft University of Technology（1966）．
+
+\bibitem{yasutomi}Yasutomi，S．，Bair，S．，and Winer，W.O．，“An Application of a Free Volume Model to Lubricant Rheology I—Dependence of Viscosity on Temperature and Pressure，”ASME Journal of Tribology，Vol．106，No．2（1984），pp．291–302．
+
+\bibitem{潤滑油構造}Mortier，R.M.，Fox，M.F.，and Orszulik，S.T．，Chemistry and Technology of Lubricants，3rd ed．，Springer，London（2010）．
+
+\bibitem{粘度分類JIS}日本産業規格，"JIS K 2001 工業用潤滑油- ISO粘度分類"，1993.
+
+\bibitem{多変量解析入門}小西貞則，"多変量解析入門 - 線形から非線形へ -"，初版第12刷，岩波書店(2010)，pp.20-37.
+
+\bibitem{回帰分析}佐和隆光，"統計ライブラリー　回帰分析（新装版）"，新装版第4刷，朝倉書店(2020)，pp.55-85.
+
+\bibitem{SRL} 協同油脂株式会社，"低騒音性に優れ，使用温度範囲が広い-マルテンプSRL　広温度範囲用ベアリンググリース" .
+
+\bibitem{LRL} 協同油脂株式会社，"安全データシート" ，[マルテンプLRL No.3][協同油脂株式会社][07-082]，(2024). 
+
+\bibitem{エクセライト}  協同油脂株式会社，"KYODO YUSHI GREASES" .
+
+\bibitem{マルティノック} ENEOS株式会社，"マルティノックSDX　長寿命型高速回転転がり軸受用グリース" ，商品紹介，(2024).
+
+\bibitem{ちょう度JIS} 日本産業規格， "JIS K 2220（ちょう度試験方法）" , 2023.
+
+\bibitem{丸め方} 日本産業規格， "JIS Z 8401（数値の丸め方）" , 2019.
+%\bibitem{3}
+%%%%ここまで
+\end{thebibliography}
+}
+
+
+
+\end{document}

@@ -107,9 +107,12 @@ run 0
 
 # 1. 原子ごとの応力を計算する定義 (ID: st)
 compute st all stress/atom NULL
-dump d_ovito all custom 1 ${output_dir}/dump_stress_${n}.lammpstrj id type x y z c_st[1] c_st[2] c_st[3] c_st[4] c_st[5] c_st[6]
+compute voro all voronoi/atom
+dump dump_stress all custom 1 ${output_dir}/dump/defect_lattice/defect_lattice_${atom_type_to_delete}/stress_viz_${n}.dump id type x y z c_st[1] c_st[2] c_st[3] c_st[4] c_st[5] c_st[6] c_voro[1]
 run 0
-undump d_ovito
+undump dump_stress
+uncompute st
+uncompute voro  # voroも計算終了
 
 # 応力の出力(perfect lattice (J))
 variable de_pxx_J equal c_de_sumstress${n}[1]*${conv_barVang_to_NVm}
@@ -138,3 +141,5 @@ print "--------------------------------------------" screen yes
 # ====== 次へ ======
 next n
 jump SELF loop_start
+
+

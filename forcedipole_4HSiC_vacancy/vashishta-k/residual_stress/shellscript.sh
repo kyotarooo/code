@@ -123,7 +123,7 @@ python3 "$code_dir/new_delete_atom.py"
 
 ######## run rammps script ########
 # lmpファイル
-LAMMPS=/Users/kyou/lammps-29Oct20/src/lmp_mpi
+LAMMPS=/Users/kyou/lammps-29Oct20/build/lmp
 
 # lammps script file
 lammps_script=non_defect.lammps

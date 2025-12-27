@@ -1,0 +1,336 @@
+\chapter{原理}
+\section{潤滑}
+潤滑（lubrication）の目的は，荷重を支えている2つの面の間に潤滑剤（lubricant）を供給することで，摩擦の減少や摩耗，焼付きなどの表面損傷を軽減・防止することである．潤滑の種類は，流体潤滑（fluid film lubrication），境界潤滑（boundary lubrication），固体潤滑（solid film lubrication）がある．潤滑油，グリースを用いた潤滑は，流体潤滑，境界潤滑にあたる．\par
+
+\subsection{流体潤滑}
+流体潤滑は，摩擦面の表面粗さよりも十分に厚い流体膜を作り，摩擦面同士の接触を完全に断つ潤滑方法である．流体潤滑の特性や理論は，Reynoldsの潤滑理論\cite{reynolds方程式}によって求められる．
+Reynoldsの潤滑理論は，Navier-Stokes方程式を基に構成され，
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item 非圧縮性ニュートン流体．
+  \item すき間内流れは層流で，粘度一定．
+  \item 流体の慣性力は，粘性力に比べて小さく，無視できる．
+  \item 潤滑幕は薄く，膜厚方向の圧力は無視できる．
+  \item 壁面と流体に滑りが生じない\cite{滑り}．
+  \item 潤滑面の曲率の影響を無視する\cite{曲率}．
+  \item 粘度・密度・圧力は膜厚方向に一定\cite{密度}．
+\end{itemize}
+という仮定を置くことで，表現される．図\ref{fig:潤滑方程式}に示すような速度境界条件で
+\begin{equation}
+\begin{split}
+  \frac{\partial}{\partial x}\!\left(\frac{\rho h^3}{12\eta}\frac{\partial p}{\partial x}\right)
+ +\frac{\partial}{\partial y}\!\left(\frac{\rho h^3}{12\eta}\frac{\partial p}{\partial y}\right)
+ ={}&\frac{u_1+u_2}{2}\frac{\partial(\rho h)}{\partial x}
+ +\frac{v_1+v_2}{2}\frac{\partial(\rho h)}{\partial y} \\[4pt]
+ &+\frac{\rho h}{2}\frac{\partial(u_1+u_2)}{\partial x}
+ +\frac{\rho h}{2}\frac{\partial(v_1+v_2)}{\partial y}
+ +\frac{\partial(\rho h)}{\partial t}
+\end{split}
+\end{equation}
+と表される\cite{reynolds方程式}．ここで，$\rho$は密度を，$\eta$は絶対粘度を$p$は圧力をそれぞれ表す．
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=50mm]{images/潤滑方程式.pdf} %pdfのみ
+  \caption{Velocity boundary condition.}\label{fig:潤滑方程式} 
+\end{figure}\par
+
+しかし，20世紀に入り，歯車や転がり軸受などの機械要素では，Reynoldsの潤滑理論では実際の潤滑挙動を表現できないことが分かった．Dowsonらは，接触面を剛体として仮定するのではなく，弾性変形と潤滑油粘度の圧力による増加を考慮した\cite{弾性流体潤滑理論}弾性流体潤滑理論（elastohydrodynamics lubrication, EHL）\cite{弾性潤滑}を確立した．この弾性流体潤滑理論は，接触面の弾性方程式とReynolds方程式を連立することで，油膜形状や油膜圧力分布を計算することが可能である．\par
+また，潤滑油の粘性抵抗による発熱や，熱伝導・熱伝達による油膜内の温度・粘度分布を考慮した熱流体潤滑理論（thermohydrodynamics lubrication, THL）も考案された．この理論では，一般化されたReynolds方程式，熱伝導方程式，エネルギー方程式を連立することで求めることが可能である．
+
+\subsection{境界潤滑}
+初期に流体潤滑条件で運転を開始しても，運転状況が苛酷になると，徐々に流体膜が薄くなり，摩擦面同士が直接接触するようになる．摩擦面間に吸着した単分子～数分子程度の膜厚の潤滑を境界潤滑という．これらの薄膜は，ある温度（転移温度）以上になると，軟化し潤滑能力を失う．この場合には，硫黄，リン，塩素などを含む極圧剤を潤滑油に転嫁し，摩擦面に添加剤との化学反応膜を形成させる必要がある．
+
+\section{潤滑油}
+グリースの基油（base oil）は，潤滑油であり，鉱油と呼ばれる石油系潤滑油や非石油系潤滑油が存在する．非石油系潤滑油は，合成油よ動植物油脂が存在する．基油に求められる性能は，
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item 使用条件に見合った適切な粘度を持つ．
+  \item 粘度指数が高く，温度変化に対する粘度変化が少ない．
+  \item 熱・酸化安定性が高い．
+  \item 蒸発しにくい．
+  \item 引火点が低く，流動点が低い．
+  \item 添加剤の溶解性が高く，その添加効果を妨げない．
+\end{itemize}
+などがある．基油は大まかに燃料との親和性の良い石油系潤滑油や製造時に\ce{CO2}が増加しない動植物油や，化学合成で生成され，鉱油の弱点を補う合成潤滑油，エマルションなどの水溶性潤滑剤に大別される．\par
+基油の化学構造は，これらの流動特性に直接的な影響を与えるため，次節では潤滑油の基本的なレオロジー特性について述べ，その後に鉱油，合成油，動植物油の構造的特徴と流動特性の関係を整理する．
+
+\subsection{潤滑油の流動特性}
+流体は，せん断応力$\tau$とせん断ひずみ速度$\dot{\gamma}$との関係に基づき，ニュートン流体（newtonian fluid）と非ニュートン流体（non-newtonian fluid）に分類される．ニュートン流体は，
+\begin{equation}
+\begin{split}
+\tau=\eta\cdot\dot{\gamma}
+\end{split}
+\end{equation}
+の線形関係を満たし，比例定数$\eta$を絶対粘度（absolute viscosity, dynamic viscosity）または粘性係数（coefficient viscosity）という\cite{流力教科書}．\par
+一方，非ニュートン流体は，絶対粘度$\eta$が$\dot{\gamma}$依存性を持ち，
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item せん断薄化(shear-thinning)\cite{せん断薄化}
+  \item せん断肥厚(shaer-thickening)\cite{せん断肥厚}
+  \item Bingham塑性
+  \item チキソトロピ
+\end{itemize}
+などの現象を示す．\par
+研究対象である潤滑油は，凝固点付近の低音域や高圧，高滑り速度の場合を除き，ニュートン流体として取り扱うことができる\cite{潤滑剤原理教科書１}．\par
+流体潤滑で大事なのは，潤滑油の粘度である．粘度の代表的な単位として，SI単位の$\si{\pascal\cdot\second}$があり，CGS単位の$\mathrm{P [g/(s\cdot cm)]}$(poise)やその$1/100$の$\mathrm{cP}$ (centipoise)も広く用いられている．また，絶対粘度$\eta$と密度$\rho$の比を動粘度(kinematic viscosity)といい，
+\begin{equation}
+\begin{split}
+\nu=\frac{\eta}{\rho}
+\end{split}
+\end{equation}
+と定義する．動粘度も潤滑油の流動特性を表す指標として広く用いられている．動粘度の単位は，$\mathrm{m^2/s}$であるが，潤滑業界では$\mathrm{cm^2/s}$を$\mathrm{St}$ (stokes)と表記し，その$1/100$の単位である$\mathrm{cSt}$ (centistokes)と共に広く使用されている．\par
+工業用潤滑油の粘度・動粘度は表\ref{table:iso粘度表}に示すとおり規格化されており，$40\si{\degreeCelsius}$における動粘度に基づくISO粘度分類(ISO 3448)\cite{ISO粘度分類}が存在する．この分類と同じ規格がJISにも規定されている\cite{粘度分類JIS}．
+
+\begin{table}[htbp]
+\begin{center}
+\caption{ISO viscosity classification\cite{ISO粘度分類}.}\label{table:iso粘度表}
+\begin{threeparttable}
+\begin{tabular}{c|c|P{16mm}|P{16mm}}
+\hline\hline
+ISO\ viscosity\ grade &
+\makecell{Mid-point\ kinematic\ viscosity\\
+$[\si{mm^2/s}$ at $40\si{\degreeCelsius}]$} &
+\multicolumn{2}{c}{%
+  \makecell{Kinematic\ viscosity\ limits\\
+  $[\si{mm^2/s}$ at $40\si{\degreeCelsius}]$}%
+} \\
+\cline{3-4}
+ & & min. & max. \\
+\hline
+ISO\ VG\ 2 & 2.2 & 1.98 & 2.42 \\
+ISO\ VG\ 3 & 3.2 & 2.88 & 3.52 \\
+ISO\ VG\ 5 & 4.6 & 4.14 & 5.06 \\
+ISO\ VG\ 7 & 6.8 & 6.12 & 7.48 \\
+ISO\ VG\ 10 & 10 & 9.00 & 11.0 \\
+ISO\ VG\ 15 & 15 & 13.5 & 16.5 \\
+ISO\ VG\ 22 & 22 & 19.8 & 24.2 \\
+ISO\ VG\ 32 & 32 & 28.8 & 35.2 \\
+ISO\ VG\ 46 & 46 & 41.4 & 50.2 \\
+ISO\ VG\ 68 & 68 & 61.2 & 74.8 \\
+ISO\ VG\ 100 & 100 & 90.0 & 110 \\
+ISO\ VG\ 150 & 150 & 135 & 165 \\
+ISO\ VG\ 220 & 220 & 198 & 242 \\
+ISO\ VG\ 320 & 320 & 288 & 352 \\
+ISO\ VG\ 460 & 460 & 414 & 506 \\
+ISO\ VG\ 680 & 680 & 612 & 748 \\
+ISO\ VG\ 1000 & 1000 & 900 & 1100 \\
+ISO\ VG\ 1500 & 1500 & 1350 & 1650 \\
+\hline
+\end{tabular}
+\end{threeparttable}
+\end{center}
+\end{table}
+\par
+
+流体の粘性は，分子間力と運動量移動に起因するが，液体では分子間力が粘性特性を支配する\cite{潤滑剤原理教科書１}．これが原因で，液体の粘度は温度上昇とともに低下する．潤滑油の粘度と温度の間には，
+\begin{equation}
+\begin{split}\label{eq:粘度-温度}
+\log\log(\nu+\lambda)=A+B\cdot\log T
+\end{split}
+\end{equation}
+の関係式が経験的に成立することが知られている\cite{潤滑剤原理教科書１}．ただし，$A, B, \lambda$は各潤滑油由来の定数で，$T$は温度$[\si{K}]$を表す．実務上は$\lambda=0.7$として，ASTM D341\cite{ASTM粘度一般式}を中心に広く使用されている．また，$40\si{\degreeCelsius}$と$100\si{\degreeCelsius}$の粘度（動粘度）は液体潤滑油において国際的に標準測定点に設定されており，これらの値を用いて式(\ref{eq:粘度-温度})の$A, B$の値を推定することができる．\par
+粘度の温度による変化率は，粘度指数(viscosity index, VI)が用いられており，JISではA法，B法の2種類の計算方法が設定されている\cite{粘度指数}．\par
+A法は，粘度指数が100以下の潤滑油に用いられる算出方法であり，
+\begin{equation}
+\begin{split}\label{eq:A法}
+\mathit{VI}=\frac{L-U}{L-H}\cdot 100
+\end{split}
+\end{equation}
+のように定義される\cite{粘度指数}．
+3つの変数はそれぞれ
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item $H$：$100\si{\degreeCelsius}$で試料と同じ動粘度をもち，なおかつ粘度指数が100の潤滑油が$40\si{\degreeCelsius}$で示す動粘度
+  \item $L$：$100\si{\degreeCelsius}$で試料と同じ動粘度をもち，なおかつ粘度指数が0の潤滑油が$40\si{\degreeCelsius}$で示す動粘度
+  \item $U$：試料の40\si{\degreeCelsius}における動粘度
+\end{itemize}
+を表す．$H, L$は，$100\si{\degreeCelsius}$の動粘度を基に導出され，$100\si{\degreeCelsius}$の動粘度が，$2$〜$70\si{mm^2/s}$の場合，JIS K 2283の付表1\cite{粘度指数}から導出する．一方で$70\si{mm^2/s}$以上の場合は，$100\si{\degreeCelsius}$の動粘度を$Y$として，
+\begin{equation}
+\begin{split}\label{eq:100粘度L}
+L=0.8353Y^2+14.67Y-216
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}\label{eq:100粘度H}
+H=0.1684Y^2+11.85Y-97
+\end{split}
+\end{equation}
+定義される．これらの計算結果は，JIS Z 8401\cite{丸め方}により丸め幅を1にする．\par
+B法は，粘度指数が100を超える潤滑油に用いられる算出方法で，
+\begin{equation}
+\begin{split}\label{eq:B法}
+\mathit{VI}=\frac{10^N -1}{0.00715}+100\\
+N=\frac{\log H-\log U}{\log Y}
+\end{split}
+\end{equation}
+と定義される．4つの変数はそれぞれ
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item $N$：$Y$を$H$と$U$の比に一致させるために必要なべき数
+  \item $H$：$100\si{\degreeCelsius}$で試料と同じ動粘度をもち，なおかつ粘度指数が100の潤滑油が$40\si{\degreeCelsius}$で示す動粘度
+  \item $U$：試料の$40\si{\degreeCelsius}$における動粘度
+  \item $Y$：試料の$100\si{\degreeCelsius}$における動粘度
+\end{itemize}
+を示し，$H$は，A法と同様の計算方法により算出される．\par
+式(\ref{eq:A法}), (\ref{eq:B法})より，粘度指数$\mathit{VI}
+$が大きいほど温度による粘度変化が少ないことが分かる．\par
+潤滑油の粘度は圧力によっても変化し，圧力の増加に伴い指数関数的に増加することも知られている．圧力$p$の粘度$\eta_p$，大気圧下の粘度$\eta_0$として，
+\begin{equation}
+\begin{split}\label{eq:barusの式}
+\eta_p=\eta_0\cdot \exp (\alpha p)
+\end{split}
+\end{equation}
+  の関係が成立する（Barusの式）\cite{barus}．$\alpha$を潤滑油の粘度の圧力係数という．しかし，高圧域ではBarus式の適用限界が指摘されており\cite{barusの限界}，EHL解析ではRoelands式\cite{roelands}やYasutomi\cite{yasutomi}式が一般に用いられる．
+
+
+\subsection{鉱油の性質と流動特性}
+鉱油は，原油の重質分を減圧蒸留し，脱ろう処理などの精製工程を経て得られる石油系潤滑油であり，主成分は炭化水素(hydrocarbons)である．炭化水素以外の非炭化水素成分（硫黄化合物，窒素化合物など）は精製により大部分が除去される．鉱油に含まれる炭化水素は炭素数15〜70，分子量約250〜700と比較的大きく，異性体の種類が極めて多いことから，個々の化合物を完全に同定することは事実上困難である．鉱油中の炭化水素は，飽和鎖状のパラフィン炭化水素(paraffin)，二重結合を有するオレフィン(olefin)，飽和環を含むナフテン(naphthenic)，および芳香族環をもつ芳香族炭化水素(aromatic)に大別され，これらの含有比率に基づきパラフィン系，ナフテン系，芳香族系に分類される．\par
+鉱油の流動特性は，これら炭化水素の分子構造に強く依存する．\par
+直鎖アルカン(n-paraffin)は分子量の割に粘度・密度が低く，温度変化に対する粘度変化が小さいため高いVIを示すが，融点が高く結晶化しやすく，低温流動性を悪化させる．\par
+分岐アルカン(isoparaffin)は分岐により融点が低下し，ワックス析出が抑制されることで低温流動性が改善される一方，VIは直鎖よりやや低下する．ナフテン炭化水素は同分子量のアルカンより密度・粘度が高く融点が低いため，ワックスの原因になりにくいが，粘度−温度特性（VI）はパラフィン系より劣る．ただし長鎖アルキル側鎖を有する単環ナフテンは，分岐パラフィンに近いVIと良好な低温特性を両立するため，ベースオイル成分として好ましいとされる．\par
+芳香族炭化水素は高密度・高粘度でVIが最も低いが，融点は低く，極性が高いため添加剤溶解性（ソルベンシー）に優れる．ただし酸化安定性が低いため，その含有量は最小限に制御される．\par
+このように鉱油の流動特性は，「直鎖か分岐か」「環構造の有無」「芳香族環の割合」といった分子構造的要因で体系的に整理できる．近年の高度水素化精製・異性化精製に基づく Group II／III ベースオイルは，直鎖ワックスを適度に分岐化しつつ，芳香族および不安定成分を大幅に低減することで，高VIと低流動点を両立した高品位鉱油として位置づけられている．\par
+本節の内容は文献\cite{潤滑剤原理教科書１}と文献\cite{潤滑油構造}の第2章を参考に構成した．
+
+
+\subsection{合成油の性質と流動特性}
+合成潤滑油(synthetic lubricant)は，特定の性能を向上させる目的で化学合成されたベースオイルであり，鉱油や動植物油では得られない特性（耐熱性，酸化安定性，低温流動性，難燃性，耐放射線性など）が要求される用途に広く用いられる．合成油は化学構造に基づき，ポリグリコール，リン酸エステル，フッ素系油，シリコーン油，および工業的に最も使用量の多いポリアルファオレフィン(PAO)などに分類される．\par
+PAO (polyalphaolefin)は，$\alpha$-オレフィンの重合により得られる飽和炭化水素であり，分子量分布が狭くワックス成分を含まないため，高い粘度指数（VI），優れた低温流動性，低揮発性を示す．等粘度の鉱油と比較すると，PAO はVIが高く，酸化安定性や揮発性にも優れることから，自動車用エンジン油や工業用潤滑油の主要基油として広く利用されている．また，GTL(Gas to Liquid)由来の Group III＋油も，PAO と同等の高VI・低揮発性・良好な酸化安定性を示し，近年では合成油に準ずる高性能基油として用いられている．\par
+エステル系合成油(脂肪族ジエステル，ポリオールエステルなど)は，極性基(–COO–)を有するため金属表面への濡れ性が良く，高温安定性や清浄性にも優れる．特にポリオールエステルは低温流動性が良好で，航空エンジン油や冷凍機油など幅広い温度範囲での安定作動が求められる用途で多用される．一方で，吸湿性や加水分解反応に起因する酸生成の問題があり，水分管理が重要となる．\par
+ポリグリコール(PAG)はエーテル結合を含む高極性流体であり，非常に高い潤滑性と低摩擦係数を示す．一部の鉱油やPAOと非相溶であるため，使用時には相溶性の確認が必要であるが，水溶性タイプは金属加工油，高温ギヤ油，消防設備用作動油などに適用されている．粘度指数は比較的高く，温度変化に対する粘度の安定性も良い．\par
+リン酸エステル(phosphate ester)は，高い難燃性と優れた熱安定性を持ち，火災リスクの高い航空機油圧系や高温環境下の油圧作動油として利用される．ただし，加水分解しやすく，腐食やゴムシール材との適合性に注意が必要であるため，用途は限定される．\par
+フッ素系油(PFPE)およびシリコーン油は，極めて高い熱・酸化安定性と化学的安定性を有し，真空機器，高温雰囲気，放射線環境など特殊用途に適用される．PFPE は完全フッ素化構造をもち，広い温度範囲で粘度変化が小さく，蒸発損失が極めて低い．シリコーン油もまた高い熱安定性を示すが，潤滑性はPAOやエステルに劣るため，特性に応じて使い分けられている．\par
+このように，合成油の流動特性は，分子構造（分岐構造，飽和度，極性，官能基の種類）に強く依存する．飽和度が高く非極性のPAOは高VIと優れた低温流動性を示し，極性を持つエステルやポリグリコールは濡れ性・潤滑性に優位性を持つ一方で，粘度–温度特性や加水分解特性が異なる．用途ごとにこれらの特性を組み合わせることで，要求性能に応じた合成潤滑油が設計されている．\par
+本節の内容は文献\cite{潤滑剤原理教科書１}と文献\cite{潤滑油構造}の第2章を参考に構成した．
+
+
+\subsection{動植物油の性質と流動特性}
+動植物油は，牛脂や豚脂に代表される動物油脂，および菜種油，ひまし油，パーム油などの植物油脂に大別される．これらは鉱油に比べて潤滑性が高く，境界潤滑域で優れた膜形成能を示す一方，分子内に存在する不飽和結合が熱・酸化に対して不安定であるため，高温用途には適さない．\par
+動植物油の主要成分は，脂肪酸とグリセロールからなるトリグリセリド(triacylglycerol)であり，炭素数8〜22の直鎖脂肪酸がエステル結合した構造を持つ．脂肪酸は飽和，一価不飽和，多価不飽和に分類され，その組成比が油脂の流動特性を支配する．\par
+流動特性として，植物油は一般に鉱油よりも粘度指数（VI）が高く，温度変化による粘度低下が小さいという利点を有する．一方で，飽和脂肪酸を多く含む油脂は直鎖構造が整列・結晶化しやすいため，低温で固化しやすい．これに対し，不飽和脂肪酸を多く含む油脂は cis 二重結合による屈曲構造を有し，分子が整列しにくため固化しにくく，低温流動性に優れる．しかし，これらの二重結合は酸化反応を受けやすく，高温酸化安定性は低下する．\par
+以上より，動植物油の流動特性はトリグリセリド構造と脂肪酸組成に強く依存し，
+\begin{itemize}[itemsep=0pt, parsep=0pt]
+  \item 飽和脂肪酸が多い油：高粘度で低温固化しやすいが，酸化には比較的安定．
+  \item 不飽和脂肪酸が多い油：低温流動性に優れるが，酸化に弱い．
+\end{itemize}
+という一般傾向が存在する．\par
+本節の内容は文献\cite{潤滑剤原理教科書１}および文献\cite{潤滑油構造}の第6章を参考に構成した．
+
+
+\section{グリース}
+潤滑剤は，摩擦面間の摩擦・摩耗の低下，焼付き・摩耗・転がり疲れなどの表面損傷の防止，異物混入防止，潤滑面の冷却，腐食・錆の防止などの目的で使用される\cite{潤滑剤原理教科書１}．潤滑剤は，液体状の潤滑油，半固体状のグリース，固体潤滑剤に分けられる．グリース(grease)は，潤滑油を基油として，増ちょう剤とよばれる微細な固体を基油中に分散させ，半固体状にした潤滑剤である．グリースの約80\% は基油（潤滑油）で，残りの20\% ほどが，増ちょう剤と必要に応じて添加剤である\cite{潤滑剤原理教科書２}． 
+
+\subsection{増ちょう剤の性質と役割}
+グリースに用いられる増ちょう剤は，基油に三次元ネットワーク構造を与えて半固体状態を保持させる重要な構成要素である．増ちょう剤は大きく石けん系(soap thickeners)と非石けん系(non-soap thickeners)に分類される．\par
+石けん系増ちょう剤は，リチウム石けん系(lithium soap)，カルシウム石けん系(calcium soap)，複合石けん系(complex soaps)に大別される．\par
+一方，非石けん系増ちょう剤は，粘土系(clay/bentonite)，シリカ系(silica gel)，固体潤滑系(graphite)，フッ素樹脂系(PTFE)，高分子系(polyurea)など，多様な材料に基づく複数のカテゴリーに分けられる．本節では，これらの代表的な増ちょう剤について，特徴と使用用途を比較しながら整理する．\par
+リチウム石けんは，12-ヒドロキシステアリン酸(12-HSA)を用いた系が標準であり，機械的安定性，耐水性，耐熱性のバランスが良い．実用温度は約$120\si{\degreeCelsius}$まで安定しており，低温では硬化しポンプ性が低下するものの，総合性能に優れるため最も普及している．\par
+カルシウム石けんは，従来の含水型は低温に弱かったが，無水カルシウム石けんの普及により，耐水性が非常に高く$110\si{\degreeCelsius}$級の耐熱性も確保される．粘着性が強く，海洋機械，農業機械，建設機械などの水環境で広く使われる．\par
+複合石けんは，高温用途を意識して発展した増ちょう剤である．リチウム複合石けんは滴点(dropping point)が$200\si{\degreeCelsius}$級と高く，機械安定性と荷重支持能力に優れるため，自動車・鉄鋼設備の高温軸受で用いられる．アルミニウム複合石けんは滴点が$240\si{\degreeCelsius}$以上と非常に高く，耐水性も極めて良好で，低濃度でも十分なちょう度が得られるためポンプ送給性に優れる．カルシウム複合石けんは極圧性能が突出しており，$250\si{\degreeCelsius}$級のdropping point を示し，重荷重軸受や建設機械で使用される．\par
+非石けん系増ちょう剤としてまず挙げられる粘土系（ベントナイト／クレー）は，無機フィラーで滴点を持たず，理論上は高温まで構造が残る．ただし油分離が大きく，給脂配管で詰まりが生じやすいため，現在は限定用途にとどまる．シリカゲルは弾性が小さくポンプ送給性に優れるが，同様に油離れが大きく中央給脂には適さない．\par
+固体潤滑型のグラファイトグリースは，キャリア油が揮発した後もグラファイトの層状構造が高温潤滑を維持し，製鉄設備などの極限高温環境で使用される．PTFE系増ちょう剤は，基油にPFPEを用いた極めて化学安定な系で，酸・アルカリ・溶剤・酸素などの特殊環境，さらには真空用途に対応する．\par
+高分子系のポリウレアは，イソシアネートとアミンからなる有機ポリマーによるネットワークで，高温安定性・酸化安定性・寿命特性に優れ，密閉軸受の長寿命グリースとして広く使用される．機械安定性も良好だが，低温で硬化しやすい点は注意点である．\par
+本節の内容は文献\cite{潤滑油構造}を参考に構成した．
+
+
+
+
+\subsection{グリースの性質と流動特性}
+
+\section{添加剤}
+
+
+\subsection{油性向上剤}
+
+\subsection{極圧剤}
+
+\subsection{粘度指数向上剤}
+
+\subsection{酸化防止剤}
+
+\subsection{流動点降下剤}
+
+\section{グリースの試験法}
+
+\subsection{ちょう度試験}
+
+\subsection{滴点}
+
+\subsection{離油度}
+
+\section{重回帰分析の基本原理}
+重回帰分析は，原因となる複数の説明変数$x_{j}\;(j=1, \,2, \cdots , \,p)$が，結果となる$n$組の目的変数（被説明変数）$y_{i} \;(i=1,\,2, \cdots , \,n)$に対してどのような影響を与えているのかを明らかにする手法である\cite{多変量解析入門}．線形重回帰モデルは，一般に，
+\begin{equation}
+\begin{split}\label{eq:重回帰基本式}
+y_{i} = \beta_{0} + \sum_{j=1}^{p} \beta_{j}x_{ij} +  \varepsilon_{i}  \quad  (i=1,\,2, \cdots , \,n)
+\end{split}
+\end{equation}
+で表される．$\beta_{j}$は回帰係数，$\varepsilon_{i}$は誤差項を表す．この式をベクトルと行列を用いて表すと，
+\begin{equation}
+\begin{split}\label{eq:重回帰ベクトル基本式}
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}
+\end{split}
+\end{equation}
+となる．ここで，$\mathbf{y}$は目的変数に関する$n$個のデータからなる$n$次元観測値ベクトル，$\mathbf{X}$は$p$個の説明変数に関するデータに，切片に対応する$1$を加えた$n \times (p+1)$行列で計画行列と呼ばれる．また，$\boldsymbol{\beta} $は$(p+1)$次元回帰係数ベクトル，$ \boldsymbol{\varepsilon}$は$n$次元誤差ベクトルである．
+
+
+\subsection{最小二乗推定}
+最小二乗法は，誤差の$2$乗和を最小にするような回帰式を，観測データに最もよく適合するモデルとみなす方法である．この最小二乗法は，誤差項や計画行列に以下の仮定をおく\cite{回帰分析}．
+\begin{itemize}[itemsep=0pt, parsep=0pt, label={}]
+  \item 仮定1：$E(\varepsilon_{i}\varepsilon_{j})=0 \;(i \neq j)$
+  \item 仮定2：$E(\varepsilon_{i})=0$
+  \item 仮定3：$E(\varepsilon_{i}^2)=\sigma^2$
+\end{itemize}
+仮定1は誤差項が互いに無相関であることを表す（無相関であるが，必ずしも独立なわけではない）．仮定2は，誤差の平均がゼロになることを示している．\par
+線形回帰モデルの誤差ベクトルは，回帰係数ベクトル$\boldsymbol{\beta} = (\beta_{0},\, \beta_{1}, \cdots , \, \beta_{p})^T$によって決まる．ここで，誤差の二乗和（残差平方和, Residual Sum of Squares, RSS）$\mathbf{S}(\boldsymbol{\beta})$は，
+\begin{equation}
+\begin{split}\label{eq:残差平方和}
+\mathbf{S}(\boldsymbol{\beta}) = \sum_{i=1}^{n} \varepsilon_{i}^2 = 
+\boldsymbol{\varepsilon}^T \boldsymbol{\varepsilon} = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^T (\mathbf{y}  - \mathbf{X}\boldsymbol{\beta})
+\end{split}
+\end{equation}
+と表され，この残差平方和を最小にする$\hat{\boldsymbol{\beta}} = (\hat{\beta_{0}}, \, \hat{\beta_{1}}, \cdots , \, \hat{\beta_{p}})^T $を求める．
+式\eqref{eq:残差平方和}は，
+\begin{equation}
+\begin{split}\label{eq:残差平方和の展開}
+\mathbf{S}(\boldsymbol{\beta}) = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^T (\mathbf{y}  - \mathbf{X}\boldsymbol{\beta})
+= \mathbf{y}^T \mathbf{y} - 2\mathbf{y}^T \mathbf{X} \boldsymbol{\beta} + \boldsymbol{\beta}^T \mathbf{X}^T \mathbf{X} \boldsymbol{\beta}
+\end{split}
+\end{equation}
+より，$\boldsymbol{\beta}$で偏微分を行い，それがゼロになればよい．よって式\eqref{eq:残差平方和の展開}は，
+\begin{equation}
+\begin{split}\label{eq:残差平方和の偏微分}
+\frac{\partial \mathbf{S}(\boldsymbol{\beta})}{\partial \boldsymbol{\beta}}
+= \frac{\partial }{\partial \boldsymbol{\beta}} (\mathbf{y}^T \mathbf{y} - 2\mathbf{y}^T \mathbf{X} \boldsymbol{\beta} + \boldsymbol{\beta}^T \mathbf{X}^T \mathbf{X} \boldsymbol{\beta})
+= -2 \mathbf{X}^T \mathbf{y} + 2 \mathbf{X}^T \mathbf{X} \boldsymbol{\beta} = \boldsymbol{0}
+\end{split}
+\end{equation}
+の解$\hat{\boldsymbol{\beta}}$として与えられる．式\eqref{eq:残差平方和の偏微分}は正規方程式と呼ばれ，もし$\mathbf{X}^T \mathbf{X}$に逆行列が存在すれば，最小二乗推定値$\hat{\boldsymbol{\beta}}$は
+\begin{equation}
+\begin{split}\label{eq:最小二乗推定値}
+\hat{\boldsymbol{\beta}} = (\mathbf{X}^T \mathbf{X})^{-1} \mathbf{X}^T \mathbf{y}
+\end{split}
+\end{equation}
+で与えられる．この最小二乗推定値を係数に持つ式
+\begin{equation}
+\begin{split}\label{eq:線形回帰式}
+y = \hat{\beta_{0}} + \hat{\beta_{1}} x_{1} + \cdots +\hat{\beta_{p}} x_{p} = \hat{\boldsymbol{\beta}}^T \mathbf{x}
+\end{split}
+\end{equation}
+が線形回帰式である．ただし，$\mathbf{x}$は，$p$個の説明変数$x_{1}, \, x_{2}, \cdots , \, x_{p}$に対して，切片$\beta_{0}$に対応する$1$を加えた$\mathbf{x} = (x_{1}, \, x_{2}, \cdots , \, x_{p})^T$とする．\par
+各測定点での回帰式を用いた予測点$\hat{y_{i}}$は，測定点（観測点）$y_{i}$と残差$e_{i}$を用いて，
+\begin{equation}
+\begin{split}\label{eq:予測点}
+\hat{y_{i}} = \hat{\beta_{0}} + \hat{\beta_{1}} x_{i1} + \cdots +\hat{\beta_{p}} x_{ip} = \hat{\boldsymbol{\beta}}^T \mathbf{x}_{i}, \quad  e_{i} =y_{i} - \hat{y_{i}},
+\quad  (i=1,\,2, \cdots , \,n)
+\end{split}
+\end{equation}
+と与えられる．ただし，$\mathbf{x}_{i} = (1, \, x_{i1}, \cdots , \, x_{ip})^T$とする．さらに，これらを第$i$成分にもつ$n$次元予測値ベクトル$\mathbf{y}$，残差ベクトル$\boldsymbol{e}$を
+
+
+
+
+
+
+
+
+
+
+
+

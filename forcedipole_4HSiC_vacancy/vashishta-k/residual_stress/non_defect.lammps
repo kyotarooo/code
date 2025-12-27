@@ -91,10 +91,12 @@ run 1
 
 #完全結晶の応力をチェック
 compute st_perf all stress/atom NULL
-dump dump_stress_p all custom 1 ${output_dir}/dump/perfect_lattice/perfect_lattice_${atom_type_to_delete}/stress_viz_perfect_${n}.dump id type x y z c_st_perf[1] c_st_perf[2] c_st_perf[3] c_st_perf[4] c_st_perf[5] c_st_perf[6]
+compute voro_p all voronoi/atom
+dump dump_stress_p all custom 1 ${output_dir}/dump/perfect_lattice/perfect_lattice_${atom_type_to_delete}/stress_viz_perfect_${n}.dump id type x y z c_st_perf[1] c_st_perf[2] c_st_perf[3] c_st_perf[4] c_st_perf[5] c_st_perf[6] c_voro_p[1]
 run 0
 undump dump_stress_p
 uncompute st_perf
+uncompute voro_p
 
 # 応力の計算
 compute de_peratom all stress/atom NULL
